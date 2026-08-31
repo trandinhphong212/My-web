@@ -1,0 +1,3832 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools - IDE Trình duyệt</title>
+    <!-- Fira Code: font giống coder/PyCharm -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome cho icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Pyodide: chạy Python trong trình duyệt -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <!-- JSCPP: chạy C++ trong trình duyệt -->
+    <script src="https://cdn.jsdelivr.net/gh/felixhao28/JSCPP@gh-pages/dist/JSCPP.es5.min.js"></script>
+    <style>
+        /* ===== BIẾN MÀU THEME ===== */
+        :root {
+            --bg-main: #f5f5f5;
+            --bg-sidebar: #e6e6e6;
+            --bg-panel: #ffffff;
+            --bg-editor: #fafafa;
+            --bg-output: #f0f0f0;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #888888;
+            --divider: #cccccc;
+            --border: #b5b5b5;
+            --btn-hover: #d9d9d9;
+            --btn-active: #cfcfcf;
+            --accent: #3572A8;
+            --warning: #d9534f;
+            --success: #4caf50;
+            --tab-size: 4;
+            /* Màu code (PyCharm nền sáng) */
+            --tk-kw: #0033b3;
+            --tk-str: #067d17;
+            --tk-com: #8c8c8c;
+            --tk-num: #1750eb;
+            --tk-bi: #6f42c1;
+            --tk-def: #00627a;
+            --tk-dec: #b35000;
+        }
+
+        /* Theme SÁNG */
+        body[data-theme="light"] {
+            --bg-main: #ffffff;
+            --bg-sidebar: #f3f3f3;
+            --bg-panel: #ffffff;
+            --bg-editor: #ffffff;
+            --bg-output: #f7f7f7;
+            --text-primary: #1e1e1e;
+            --text-secondary: #555555;
+            --text-muted: #999999;
+            --divider: #e2e2e2;
+            --border: #cfcfcf;
+            --btn-hover: #ececec;
+            --btn-active: #e0e0e0;
+        }
+
+        /* Theme TỐI (giống PyCharm Darcula) */
+        body[data-theme="dark"] {
+            --bg-main: #1a1a1a;
+            --bg-sidebar: #242424;
+            --bg-panel: #2b2b2b;
+            --bg-editor: #1e1e1e;
+            --bg-output: #252525;
+            --text-primary: #d4d4d4;
+            --text-secondary: #a0a0a0;
+            --text-muted: #7a7a7a;
+            --divider: #3c3c3c;
+            --border: #4a4a4a;
+            --btn-hover: #353535;
+            --btn-active: #404040;
+            --accent: #4d8fd6;
+            /* Màu code (PyCharm Darcula) */
+            --tk-kw: #cf8e6d;
+            --tk-str: #6a8759;
+            --tk-com: #808080;
+            --tk-num: #6897bb;
+            --tk-bi: #4ec9b0;
+            --tk-def: #ffc66d;
+            --tk-dec: #bbb529;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 15px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================================
+           SẢNH (HOMEPAGE)
+           ========================================================== */
+        .hall {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .hall.hidden { display: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .hall h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .hall p {
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        .hall-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .hall-btn {
+            width: 200px;
+            padding: 1.4rem 1rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.7rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .hall-btn i { font-size: 2rem; color: var(--text-secondary); }
+
+        .hall-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--text-secondary);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+        .hall-btn:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        .hall-btn.locked {
+            cursor: not-allowed;
+            opacity: 0.7;
+            border-style: dashed;
+        }
+
+        .hall-btn.locked:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: var(--border);
+        }
+
+        .hall-btn.locked .lock-label {
+            font-size: 0.75rem;
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        /* ==========================================================
+           CÔNG CỤ PYTHON
+           ========================================================== */
+        .tools {
+            display: none;
+            min-height: 100vh;
+            background: var(--bg-main);
+        }
+
+        .tools.active {
+            display: block;
+            animation: slideIn 0.35s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(60px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* --- LEFT SIDEBAR --- */
+        .sidebar {
+            width: 56px;
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-right: 1px solid var(--divider);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-title {
+            padding: 1rem 0;
+            width: 100%;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--divider);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.5rem 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tool-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            margin-bottom: 0.4rem;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Segoe UI', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tool-btn i { color: var(--text-secondary); }
+        .tool-btn .tool-label { display: none; }
+
+        /* Tooltip: di chuột vào icon -> hiện tên nút */
+        .tool-btn:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--text-primary);
+            color: var(--bg-panel);
+            padding: 0.3rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 300;
+            pointer-events: none;
+        }
+
+        .tool-btn:hover { background: var(--btn-hover); border-color: var(--divider); }
+        .tool-btn:focus { outline: 2px solid var(--accent); }
+
+        .tool-btn.ai { margin-top: 0.6rem; }
+
+        .sidebar-footer {
+            padding: 0.6rem 0;
+            border-top: 1px solid var(--divider);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            margin-left: 56px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- TAB BAR --- */
+        .tab-bar {
+            display: flex;
+            align-items: center;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--divider);
+            padding: 0 0.75rem;
+            overflow-x: auto;
+            min-height: 38px;
+        }
+
+        .tab-bar::-webkit-scrollbar { height: 4px; }
+        .tab-bar::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 2px; }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            margin-right: 0.2rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent);
+            background: var(--bg-main);
+        }
+
+        .tab .tab-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab .tab-close:hover { background: var(--warning); color: #fff; }
+
+        .tab-add {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            margin-left: 0.3rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-add:hover { background: var(--btn-hover); color: var(--text-primary); }
+
+        .tab-bar .tab-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.4rem;
+            padding-left: 0.75rem;
+            border-left: 1px solid var(--divider);
+        }
+
+        .tab-action-btn {
+            padding: 0.35rem 0.6rem;
+            background: transparent;
+            border: 1px solid var(--divider);
+            border-radius: 4px;
+            font-size: 0.72rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-action-btn:hover { background: var(--btn-hover); }
+
+        /* --- WORKSPACE --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        /* Vùng xem (view container) */
+        .view-container {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .input-view,
+        .output-view {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .input-view { flex: 1; }
+        .output-view { flex: 1; }
+
+        .panel-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.35rem 0.9rem;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--divider);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .code-editor,
+        .output-area {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            padding: 1rem 1.2rem;
+            background: var(--bg-editor);
+            border: none;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            resize: none;
+            outline: none;
+        }
+
+        .code-editor:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+
+        .output-area {
+            background: var(--bg-output);
+            cursor: default;
+        }
+
+        /* --- EDITOR: gutter số dòng + lớp highlight màu --- */
+        .editor-wrap {
+            position: relative;
+            flex: 1;
+            display: flex;
+            min-height: 0;
+            background: var(--bg-editor);
+        }
+
+        .gutter {
+            width: 48px;
+            flex-shrink: 0;
+            overflow: hidden;
+            padding: 1rem 0.5rem 1rem 0;
+            background: var(--bg-editor);
+            border-right: 1px solid var(--divider);
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            text-align: right;
+            user-select: none;
+        }
+
+        .gutter-inner { white-space: pre; }
+
+        .highlight-layer {
+            position: absolute;
+            top: 0;
+            left: 48px;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            margin: 0;
+            padding: 1rem 1.2rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre;
+            tab-size: var(--tab-size);
+            pointer-events: none;
+            display: none;
+        }
+
+        .editor-wrap .code-editor {
+            min-width: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Khi bật Màu: textarea trong suốt, chữ màu nằm ở lớp dưới */
+        .editor-wrap.highlight-on .highlight-layer { display: block; }
+        .editor-wrap.highlight-on .code-editor {
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            caret-color: var(--text-primary);
+            background: transparent;
+        }
+        .editor-wrap.highlight-on .code-editor::placeholder {
+            -webkit-text-fill-color: var(--text-muted);
+        }
+
+        /* Khi tắt Số dòng */
+        .editor-wrap.no-lines .gutter { display: none; }
+        .editor-wrap.no-lines .highlight-layer { left: 0; }
+
+        .code-editor, .highlight-layer { tab-size: var(--tab-size); }
+        .code-editor::placeholder { color: var(--text-muted); }
+
+        /* Màu token giống PyCharm */
+        .tk-kw { color: var(--tk-kw); }
+        .tk-str { color: var(--tk-str); }
+        .tk-com { color: var(--tk-com); font-style: italic; }
+        .tk-num { color: var(--tk-num); }
+        .tk-bi { color: var(--tk-bi); }
+        .tk-def { color: var(--tk-def); }
+        .tk-dec { color: var(--tk-dec); }
+
+        /* Chế độ xem */
+        .view-container.mode-input .output-view { display: none; }
+        .view-container.mode-output .input-view { display: none; }
+        .view-container.mode-studio .input-view { flex: 1; }
+        .view-container.mode-studio .output-view { flex: 1; }
+        .view-container.mode-studio .output-view { border-left: 1px solid var(--divider); }
+
+        /* --- CONTROLS --- */
+        .controls {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0.6rem 1rem;
+            border-top: 1px solid var(--divider);
+            background: var(--bg-panel);
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 0.4rem 0.9rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn i { font-size: 0.8rem; }
+
+        .control-btn:hover { background: var(--btn-hover); border-color: var(--text-secondary); }
+        .control-btn:focus { outline: 2px solid var(--accent); }
+
+        .control-btn.run { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .control-btn.run:hover { background: #2c5d8f; }
+
+        .control-btn.clear { border-color: var(--warning); color: var(--warning); }
+        .control-btn.clear:hover { background: var(--warning); color: #fff; }
+
+        .control-btn.studio { border-color: var(--accent); color: var(--accent); }
+        .control-btn.studio:hover { background: var(--accent); color: #fff; }
+
+        .control-btn.view-btn.active { background: var(--btn-active); border-color: var(--text-secondary); }
+
+        /* Ngăn cách nhóm view */
+        .controls .view-group {
+            margin-left: auto;
+            display: flex;
+            gap: 0.4rem;
+            border-left: 1px solid var(--divider);
+            padding-left: 0.6rem;
+        }
+
+        /* ==========================================================
+           MODAL
+           ========================================================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+
+        .modal {
+            width: 90%;
+            max-width: 420px;
+            background: var(--bg-panel);
+            border: 1px solid var(--divider);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: modalPop 0.2s ease;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid var(--divider);
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body { padding: 1.2rem; }
+
+        .modal-body input {
+            width: 100%;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--divider);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: 'Fira Code', monospace;
+            outline: none;
+        }
+
+        .modal-body input:focus { border-color: var(--accent); }
+
+        .modal-footer {
+            padding: 0.9rem 1.2rem;
+            border-top: 1px solid var(--divider);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+        }
+
+        .modal-btn {
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            background: var(--bg-panel);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn:hover { background: var(--btn-hover); }
+
+        .modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .modal-btn.primary:hover { background: #2c5d8f; }
+
+        .modal-btn.danger { border-color: var(--warning); color: var(--warning); }
+        .modal-btn.danger:hover { background: var(--warning); color: #fff; }
+
+        .saved-tab-list {
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid var(--divider);
+            border-radius: 4px;
+        }
+
+        .saved-tab-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid var(--divider);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .saved-tab-item:last-child { border-bottom: none; }
+        .saved-tab-item:hover { background: var(--btn-hover); }
+
+        .saved-tab-item .name {
+            font-size: 0.85rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--text-primary);
+        }
+
+        .saved-tab-item .del {
+            color: var(--warning);
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            transition: background 0.2s ease;
+        }
+
+        .saved-tab-item .del:hover { background: var(--warning); color: #fff; }
+
+        .saved-empty {
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* ==========================================================
+           SETTINGS (CÀI ĐẶT)
+           ========================================================== */
+        .setting-group { margin-bottom: 1.15rem; }
+
+        .setting-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.45rem;
+        }
+
+        .segmented {
+            display: flex;
+            border: 1px solid var(--divider);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .segmented button {
+            flex: 1;
+            padding: 0.45rem 0;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .segmented button + button { border-left: 1px solid var(--divider); }
+        .segmented button:hover { background: var(--btn-hover); }
+        .segmented button.active { background: var(--accent); color: #fff; }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .switch-row .setting-label { margin: 0; }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: var(--btn-hover);
+            border-radius: 22px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+
+        .switch input:checked + .slider { background: var(--accent); }
+        .switch input:checked + .slider::before { transform: translateX(20px); }
+
+        /* ==========================================================
+           AI CHAT VIEW
+           ========================================================== */
+        .ai-view { display: none; min-height: 100vh; background: var(--bg-main); }
+        .ai-view.active { display: block; animation: slideIn 0.35s ease; }
+
+        .chat-main {
+            margin-left: 56px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-head {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.7rem 1.2rem;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--divider);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .chat-model-label {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            background: var(--bg-main);
+            border: 1px solid var(--divider);
+            border-radius: 20px;
+            padding: 0.15rem 0.7rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            word-break: break-word;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: #fff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .msg.ai {
+            align-self: flex-start;
+            background: var(--bg-panel);
+            color: var(--text-primary);
+            border: 1px solid var(--divider);
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg pre {
+            background: var(--bg-output);
+            border: 1px solid var(--divider);
+            border-radius: 6px;
+            padding: 0.7rem 0.9rem;
+            margin: 0.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text-primary);
+        }
+
+        .msg code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82em;
+            background: var(--bg-output);
+            border: 1px solid var(--divider);
+            border-radius: 4px;
+            padding: 0.05rem 0.35rem;
+        }
+
+        /* --- Nút sao chép cho khung code + tin nhắn bot --- */
+        .code-block { position: relative; margin: 0.5rem 0; }
+        .code-block pre { margin: 0; padding-top: 1.8rem; }
+
+        .code-copy {
+            position: absolute;
+            top: 0.35rem;
+            right: 0.45rem;
+            z-index: 2;
+            width: 26px;
+            height: 22px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            border: 1px solid var(--divider);
+            border-radius: 6px;
+            background: var(--bg-panel);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .code-copy:hover { background: var(--btn-hover); color: var(--text-primary); }
+
+        .msg-actions {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 0.45rem;
+            padding-top: 0.4rem;
+            border-top: 1px dashed var(--divider);
+        }
+
+        .msg-copy {
+            width: 26px;
+            height: 22px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            border: 1px solid var(--divider);
+            border-radius: 6px;
+            background: var(--bg-main);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .msg-copy:hover { background: var(--btn-hover); color: var(--text-primary); }
+
+        .chat-error { color: var(--warning); }
+
+        .chat-input-bar {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0.8rem 1.2rem;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--divider);
+        }
+
+        .chat-input-bar textarea {
+            flex: 1;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 0.88rem;
+            resize: none;
+            outline: none;
+            background: var(--bg-editor);
+            color: var(--text-primary);
+        }
+
+        .chat-input-bar textarea:focus { border-color: var(--accent); }
+
+        /* --- Vùng nhập chat: gợi ý lệnh + nút ＋ / model --- */
+        .chat-input-zone { position: relative; border-top: 1px solid var(--divider); background: var(--bg-panel); }
+        .chat-input-zone .chat-input-bar { border-top: none; align-items: flex-end; }
+
+        .chat-hints {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 1.2rem;
+            right: 1.2rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--divider);
+            border-radius: 8px;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.12);
+            max-height: 210px;
+            overflow-y: auto;
+            z-index: 500;
+        }
+
+        .chat-hint-item {
+            padding: 0.45rem 0.8rem;
+            cursor: pointer;
+            display: flex;
+            gap: 0.6rem;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+
+        .chat-hint-item:hover, .chat-hint-item.sel { background: var(--btn-hover); }
+        .chat-hint-item .cmd { font-family: 'Fira Code', monospace; color: var(--accent); font-weight: 600; font-size: 0.8rem; }
+        .chat-hint-item .syn { font-family: 'Fira Code', monospace; color: var(--text-muted); font-size: 0.72rem; }
+        .chat-hint-item .desc { color: var(--text-secondary); font-size: 0.75rem; }
+
+        .attach-row {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1.2rem 0;
+            font-size: 0.75rem;
+        }
+
+        .attach-chip {
+            background: var(--bg-main);
+            border: 1px solid var(--divider);
+            border-radius: 20px;
+            padding: 0.15rem 0.7rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+        }
+
+        .attach-x { border: none; background: transparent; color: var(--warning); cursor: pointer; font-size: 0.72rem; }
+        .attach-note { color: var(--text-muted); }
+
+        .plus-btn { font-size: 1.05rem; flex-shrink: 0; }
+
+        .model-btn {
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            flex-shrink: 0;
+        }
+
+        .model-menu {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            right: 1.2rem;
+            width: 320px;
+            background: var(--bg-panel);
+            border: 1px solid var(--divider);
+            border-radius: 8px;
+            box-shadow: 0 -6px 20px rgba(0,0,0,0.15);
+            padding: 0.7rem;
+            z-index: 600;
+        }
+
+        .model-menu.show { display: block; }
+
+        .model-menu-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+        }
+
+        .model-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+        }
+
+        .model-item:hover { background: var(--btn-hover); }
+        .model-item.active { color: var(--accent); font-weight: 600; }
+
+        .model-add-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+
+        .model-add-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 0.35rem 0.6rem;
+            border: 1px solid var(--divider);
+            border-radius: 5px;
+            font-size: 0.78rem;
+            font-family: 'Fira Code', monospace;
+            outline: none;
+            background: var(--bg-editor);
+            color: var(--text-primary);
+        }
+
+        .model-add-row input:focus { border-color: var(--accent); }
+
+        /* ==========================================================
+           CỬA SỔ BÀN LÀM VIỆC MINI (kéo + resize được)
+           ========================================================== */
+        .mini-win {
+            position: fixed;
+            width: 440px;
+            height: 400px;
+            min-width: 280px;
+            min-height: 220px;
+            max-width: 95vw;
+            max-height: 90vh;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 10px 34px rgba(0,0,0,0.3);
+            display: none;
+            flex-direction: column;
+            z-index: 1500;
+            resize: both;
+            overflow: hidden;
+        }
+
+        .mini-win.show { display: flex; }
+
+        .mini-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.8rem;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--divider);
+            cursor: move;
+            user-select: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .mini-x {
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0 0.35rem;
+            border-radius: 3px;
+        }
+        .mini-x:hover { background: var(--warning); color: #fff; }
+
+        .mini-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+        .mini-body textarea {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 0.6rem 0.8rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            background: var(--bg-editor);
+            color: var(--text-primary);
+        }
+
+        #miniOut { background: var(--bg-output); border-top: 1px solid var(--divider); }
+
+        .mini-controls {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem 0.8rem;
+            border-top: 1px solid var(--divider);
+        }
+
+        /* ==========================================================
+           TOAST (THÔNG BÁO CUSTOM)
+           ========================================================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            min-width: 260px;
+            max-width: 360px;
+            padding: 0.8rem 1rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--divider);
+            border-left: 4px solid var(--accent);
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            animation: toastIn 0.25s ease;
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.warning { border-left-color: var(--warning); }
+        .toast.info { border-left-color: var(--accent); }
+
+        .toast .toast-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.warning .toast-icon { color: var(--warning); }
+        .toast.info .toast-icon { color: var(--accent); }
+
+        .toast .toast-msg { flex: 1; }
+
+        .toast .toast-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .toast .toast-close:hover { color: var(--text-primary); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .toast.out { animation: toastOut 0.25s ease forwards; }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(30px); }
+        }
+
+        /* ==========================================================
+           RESPONSIVE
+           ========================================================== */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-56px); }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .hall-buttons { flex-direction: column; }
+            .hall-btn { width: 100%; max-width: 320px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================================
+         SẢNH (HOMEPAGE)
+         ========================================================== -->
+    <div id="hall" class="hall">
+        <h1>🧰 Tools</h1>
+        <p>Chọn công cụ bạn muốn sử dụng</p>
+        <div class="hall-buttons">
+            <button class="hall-btn" onclick="openTools('python')">
+                <i class="fa-brands fa-python"></i>
+                <span>Python tools</span>
+            </button>
+            <button class="hall-btn" onclick="openTools('cpp')">
+                <i class="fa-solid fa-c"></i>
+                <span>C++ tools</span>
+            </button>
+            <button class="hall-btn locked" onclick="notAvailable()">
+                <i class="fa-solid fa-calculator"></i>
+                <span>Casio tools</span>
+                <span class="lock-label">🔒 Chưa ra mắt</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         CÔNG CỤ PYTHON
+         ========================================================== -->
+    <div id="python-tools" class="tools">
+
+        <!-- --- LEFT SIDEBAR (thu gọn còn icon) --- -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-title">🛠️</div>
+            <nav class="sidebar-nav">
+                <button class="tool-btn" onclick="backToHall()" data-tip="Thoát">
+                    <i class="fa-solid fa-door-open"></i><span class="tool-label">Thoát</span>
+                </button>
+                <button class="tool-btn" onclick="loadFile()" data-tip="Tải tệp">
+                    <i class="fa-solid fa-file-arrow-up"></i><span class="tool-label">Tải tệp</span>
+                </button>
+                <button class="tool-btn" onclick="saveFile()" data-tip="Lưu tệp">
+                    <i class="fa-solid fa-file-arrow-down"></i><span class="tool-label">Lưu tệp</span>
+                </button>
+                <button class="tool-btn" onclick="openSettings()" data-tip="Cài đặt">
+                    <i class="fa-solid fa-gear"></i><span class="tool-label">Cài đặt</span>
+                </button>
+                <button class="tool-btn ai" onclick="openAI()" data-tip="AI">
+                    <i class="fa-solid fa-robot"></i><span class="tool-label">AI</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">v1.0</div>
+        </aside>
+
+        <!-- --- MAIN CONTENT --- -->
+        <main class="main-content" id="mainContent">
+
+            <!-- TAB BAR -->
+            <div class="tab-bar" id="tabBar"></div>
+
+            <!-- WORKSPACE -->
+            <div class="workspace">
+                <!-- VIEW CONTAINER: chứ Input + Output -->
+                <div class="view-container mode-input" id="viewContainer">
+                    <div class="input-view">
+                        <div class="panel-label"><i class="fa-solid fa-keyboard"></i> Input</div>
+                        <div class="editor-wrap" id="editorWrap">
+                            <div class="gutter" id="gutter"><div class="gutter-inner" id="gutterInner">1</div></div>
+                            <pre class="highlight-layer" id="highlightLayer" aria-hidden="true"></pre>
+                            <textarea class="code-editor" id="codeEditor" placeholder="# Gõ code Python ở đây... (Lưu ý: Đây chỉ là giả lập, khuyến khích dùng pycharm để chạy code)" spellcheck="false" wrap="off"></textarea>
+                        </div>
+                    </div>
+                    <div class="output-view">
+                        <div class="panel-label"><i class="fa-solid fa-terminal"></i> Output</div>
+                        <textarea class="output-area" id="outputArea" placeholder="Kết quả chạy code sẽ hiện ở đây..." readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- CONTROLS -->
+                <div class="controls">
+                    <button class="control-btn" onclick="copyCode()"><i class="fa-solid fa-copy"></i> Sao chép</button>
+                    <button class="control-btn clear" onclick="confirmClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
+                    <button class="control-btn run" onclick="runCode()"><i class="fa-solid fa-play"></i> Chạy</button>
+
+                    <button class="control-btn studio" onclick="toggleStudio()"><i class="fa-solid fa-columns"></i> Studio</button>
+
+                    <div class="view-group">
+                        <button class="control-btn view-btn active" id="inputViewBtn" onclick="setView('input')"><i class="fa-solid fa-keyboard"></i> Input</button>
+                        <button class="control-btn view-btn" id="outputViewBtn" onclick="setView('output')"><i class="fa-solid fa-terminal"></i> Output</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==========================================================
+         AI CHAT VIEW
+         ========================================================== -->
+    <div id="aiView" class="ai-view">
+
+        <!-- Thanh tools trái (icon, hover hiện tên) -->
+        <aside class="sidebar">
+            <div class="sidebar-title">🤖</div>
+            <nav class="sidebar-nav">
+                <button class="tool-btn" onclick="closeAI()" data-tip="Thoát">
+                    <i class="fa-solid fa-door-open"></i>
+                </button>
+                <button class="tool-btn" onclick="aiLoadTab()" data-tip="Load tab">
+                    <i class="fa-solid fa-folder-open"></i>
+                </button>
+                <button class="tool-btn" onclick="aiSaveTab()" data-tip="Save tab">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                </button>
+            </nav>
+            <div class="sidebar-footer">AI</div>
+        </aside>
+
+        <!-- Khung chat chính -->
+        <main class="chat-main">
+            <div class="chat-head">
+                <span>🤖 AI Chat</span>
+                <span class="chat-model-label" id="chatModelLabel"></span>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-zone">
+                <div class="chat-hints" id="chatHints"></div>
+                <div class="attach-row" id="attachRow">
+                    <span class="attach-chip">📎 <span id="attachName"></span></span>
+                    <button class="attach-x" onclick="clearAttachment()">✕ gỡ</button>
+                    <span class="attach-note">— gõ yêu cầu rồi bấm Gửi</span>
+                </div>
+                <div class="chat-input-bar">
+                    <button class="control-btn plus-btn" onclick="pickPyFile()" title="Gửi file .py cho bot đọc và làm theo yêu cầu">＋</button>
+                    <textarea id="chatInput" placeholder="Nhập tin nhắn... (gõ / để xem lệnh)" rows="2"></textarea>
+                    <button class="control-btn model-btn" onclick="toggleModelMenu()">model: <span id="modelBtnLabel"></span> ▾</button>
+                    <button class="control-btn run" onclick="sendChat()"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+                </div>
+                <div class="model-menu" id="modelMenu">
+                    <div class="model-menu-title">Model — bấm để chọn</div>
+                    <div id="modelList"></div>
+                    <div class="model-add-row">
+                        <input type="text" id="newModelInput" placeholder="model-id mới, vd: gemini-3.6-pro" onkeydown="if(event.key==='Enter') addModel()">
+                        <button class="modal-btn primary" onclick="addModel()">Thêm</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Cửa sổ bàn làm việc mini: kéo di chuyển + resize góc phải dưới -->
+        <div class="mini-win" id="miniWin">
+            <div class="mini-title">
+                <span id="miniName">tab</span>
+                <span class="mini-x" onclick="closeMini()">✕</span>
+            </div>
+            <div class="mini-body">
+                <textarea id="miniCode" placeholder="# Code Python..." spellcheck="false"></textarea>
+                <textarea id="miniOut" readonly placeholder="Output..."></textarea>
+            </div>
+            <div class="mini-controls">
+                <button class="control-btn" onclick="miniCopy()"><i class="fa-solid fa-copy"></i> Sao chép</button>
+                <button class="control-btn clear" onclick="miniClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
+                <button class="control-btn run" onclick="miniRun()"><i class="fa-solid fa-play"></i> Chạy</button>
+                <button class="control-btn studio" onclick="miniSave()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+            </div>
+        </div>
+    </div>
+    <!-- ==========================================================
+         CÔNG CỤ C++
+         ========================================================== -->
+    <div id="cpp-tools" class="tools">
+
+        <!-- --- LEFT SIDEBAR --- -->
+        <aside class="sidebar" id="cppSidebar">
+            <div class="sidebar-title">⚙️</div>
+            <nav class="sidebar-nav">
+                <button class="tool-btn" onclick="cppBackToHall()" data-tip="Thoát">
+                    <i class="fa-solid fa-door-open"></i><span class="tool-label">Thoát</span>
+                </button>
+                <button class="tool-btn" onclick="cppLoadFile()" data-tip="Tải tệp">
+                    <i class="fa-solid fa-file-arrow-up"></i><span class="tool-label">Tải tệp</span>
+                </button>
+                <button class="tool-btn" onclick="cppSaveFile()" data-tip="Lưu tệp">
+                    <i class="fa-solid fa-file-arrow-down"></i><span class="tool-label">Lưu tệp</span>
+                </button>
+                <button class="tool-btn" onclick="openSettings()" data-tip="Cài đặt">
+                    <i class="fa-solid fa-gear"></i><span class="tool-label">Cài đặt</span>
+                </button>
+                <button class="tool-btn ai" onclick="cppOpenAI()" data-tip="AI">
+                    <i class="fa-solid fa-robot"></i><span class="tool-label">AI</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">v1.0</div>
+        </aside>
+
+        <!-- --- MAIN CONTENT --- -->
+        <main class="main-content" id="cppMainContent">
+
+            <!-- TAB BAR -->
+            <div class="tab-bar" id="cppTabBar"></div>
+
+            <!-- WORKSPACE -->
+            <div class="workspace">
+                <!-- VIEW CONTAINER -->
+                <div class="view-container mode-input" id="cppViewContainer">
+                    <div class="input-view">
+                        <div class="panel-label"><i class="fa-solid fa-keyboard"></i> Input</div>
+                        <div class="editor-wrap" id="cppEditorWrap">
+                            <div class="gutter" id="cppGutter"><div class="gutter-inner" id="cppGutterInner">1</div></div>
+                            <pre class="highlight-layer" id="cppHighlightLayer" aria-hidden="true"></pre>
+                            <textarea class="code-editor" id="cppCodeEditor" placeholder="// Gõ code C++ ở đây... (Lưu ý: Đây chỉ là giả lập, khuyến khích dùng IDE như Dev-C++ hoặc VS Code để chạy code)" spellcheck="false" wrap="off"></textarea>
+                        </div>
+                    </div>
+                    <div class="output-view">
+                        <div class="panel-label"><i class="fa-solid fa-terminal"></i> Output</div>
+                        <textarea class="output-area" id="cppOutputArea" placeholder="Kết quả chạy code sẽ hiện ở đây..." readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- CONTROLS -->
+                <div class="controls">
+                    <button class="control-btn" onclick="cppCopyCode()"><i class="fa-solid fa-copy"></i> Sao chép</button>
+                    <button class="control-btn clear" onclick="cppConfirmClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
+                    <button class="control-btn run" onclick="cppRunCode()"><i class="fa-solid fa-play"></i> Chạy</button>
+
+                    <button class="control-btn studio" onclick="cppToggleStudio()"><i class="fa-solid fa-columns"></i> Studio</button>
+
+                    <div class="view-group">
+                        <button class="control-btn view-btn active" id="cppInputViewBtn" onclick="cppSetView('input')"><i class="fa-solid fa-keyboard"></i> Input</button>
+                        <button class="control-btn view-btn" id="cppOutputViewBtn" onclick="cppSetView('output')"><i class="fa-solid fa-terminal"></i> Output</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==========================================================
+         AI CHAT VIEW (C++)
+         ========================================================== -->
+    <div id="cppAiView" class="ai-view">
+
+        <aside class="sidebar">
+            <div class="sidebar-title">🤖</div>
+            <nav class="sidebar-nav">
+                <button class="tool-btn" onclick="cppCloseAI()" data-tip="Thoát">
+                    <i class="fa-solid fa-door-open"></i>
+                </button>
+                <button class="tool-btn" onclick="cppAiLoadTab()" data-tip="Load tab">
+                    <i class="fa-solid fa-folder-open"></i>
+                </button>
+                <button class="tool-btn" onclick="cppAiSaveTab()" data-tip="Save tab">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                </button>
+            </nav>
+            <div class="sidebar-footer">AI</div>
+        </aside>
+
+        <main class="chat-main">
+            <div class="chat-head">
+                <span>🤖 AI Chat (C++)</span>
+                <span class="chat-model-label" id="cppChatModelLabel"></span>
+            </div>
+            <div class="chat-messages" id="cppChatMessages"></div>
+            <div class="chat-input-zone">
+                <div class="chat-hints" id="cppChatHints"></div>
+                <div class="attach-row" id="cppAttachRow">
+                    <span class="attach-chip">📎 <span id="cppAttachName"></span></span>
+                    <button class="attach-x" onclick="cppClearAttachment()">✕ gỡ</button>
+                    <span class="attach-note">— gõ yêu cầu rồi bấm Gửi</span>
+                </div>
+                <div class="chat-input-bar">
+                    <button class="control-btn plus-btn" onclick="cppPickFile()" title="Gửi file .cpp cho bot đọc và làm theo yêu cầu">＋</button>
+                    <textarea id="cppChatInput" placeholder="Nhập tin nhắn... (gõ / để xem lệnh)" rows="2"></textarea>
+                    <button class="control-btn model-btn" onclick="cppToggleModelMenu()">model: <span id="cppModelBtnLabel"></span> ▾</button>
+                    <button class="control-btn run" onclick="cppSendChat()"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+                </div>
+                <div class="model-menu" id="cppModelMenu">
+                    <div class="model-menu-title">Model — bấm để chọn</div>
+                    <div id="cppModelList"></div>
+                    <div class="model-add-row">
+                        <input type="text" id="cppNewModelInput" placeholder="model-id mới, vd: gemini-3.6-pro" onkeydown="if(event.key==='Enter') cppAddModel()">
+                        <button class="modal-btn primary" onclick="cppAddModel()">Thêm</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Cửa sổ bàn làm việc mini C++ -->
+        <div class="mini-win" id="cppMiniWin">
+            <div class="mini-title">
+                <span id="cppMiniName">tab</span>
+                <span class="mini-x" onclick="cppCloseMini()">✕</span>
+            </div>
+            <div class="mini-body">
+                <textarea id="cppMiniCode" placeholder="// Code C++..." spellcheck="false"></textarea>
+                <textarea id="cppMiniOut" readonly placeholder="Output..."></textarea>
+            </div>
+            <div class="mini-controls">
+                <button class="control-btn" onclick="cppMiniCopy()"><i class="fa-solid fa-copy"></i> Sao chép</button>
+                <button class="control-btn clear" onclick="cppMiniClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
+                <button class="control-btn run" onclick="cppMiniRun()"><i class="fa-solid fa-play"></i> Chạy</button>
+                <button class="control-btn studio" onclick="cppMiniSave()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         MODALS
+         ========================================================== -->
+    <!-- Modal đặt tên tab -->
+    <div class="modal-overlay" id="nameTabModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Đặt tên tab mới</span>
+                <button class="modal-btn" onclick="closeModal('nameTabModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="newTabName" placeholder="Nhập tên tab..." maxlength="30">
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('nameTabModal')">Hủy</button>
+                <button class="modal-btn primary" onclick="confirmAddTab()">Thêm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận xóa code -->
+    <div class="modal-overlay" id="confirmClearModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>⚠️ Xóa code</span>
+                <button class="modal-btn" onclick="closeModal('confirmClearModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa toàn bộ code trong bàn làm việc không?<br><br>
+                Hành động này <b>không thể hoàn tác</b>.
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('confirmClearModal')">Hủy</button>
+                <button class="modal-btn danger" onclick="doClear()">Xóa tất cả</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Load tab -->
+    <div class="modal-overlay" id="loadTabModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Load tab đã lưu</span>
+                <button class="modal-btn" onclick="closeModal('loadTabModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="saved-tab-list" id="savedTabList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('loadTabModal')">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận xóa tab đã lưu -->
+    <div class="modal-overlay" id="confirmDeleteSavedModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>⚠️ Xóa tab đã lưu</span>
+                <button class="modal-btn" onclick="closeModal('confirmDeleteSavedModal')">✕</button>
+            </div>
+            <div class="modal-body" id="deleteSavedBody">
+                Bạn có chắc muốn xóa tab đã lưu này không?
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('confirmDeleteSavedModal')">Hủy</button>
+                <button class="modal-btn danger" onclick="confirmDeleteSaved()">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Load tab (trong AI chat -> mở cửa sổ mini) -->
+    <div class="modal-overlay" id="aiLoadModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Load tab -> bàn làm việc mini</span>
+                <button class="modal-btn" onclick="closeModal('aiLoadModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="saved-tab-list" id="aiSavedList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('aiLoadModal')">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cài đặt -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>⚙️ Cài đặt</span>
+                <button class="modal-btn" onclick="closeModal('settingsModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <span class="setting-label">Theme</span>
+                    <div class="segmented" id="segTheme">
+                        <button data-value="light" onclick="setSetting('theme', 'light')">Sáng</button>
+                        <button data-value="gray" onclick="setSetting('theme', 'gray')">Xám</button>
+                        <button data-value="dark" onclick="setSetting('theme', 'dark')">Tối</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <span class="setting-label">Size tab (phím Tab)</span>
+                    <div class="segmented" id="segTabSize">
+                        <button data-value="2" onclick="setSetting('tabSize', 2)">2 tab</button>
+                        <button data-value="4" onclick="setSetting('tabSize', 4)">4 tab</button>
+                        <button data-value="8" onclick="setSetting('tabSize', 8)">8 tab</button>
+                    </div>
+                </div>
+
+                <div class="setting-group switch-row">
+                    <span class="setting-label">Số dòng</span>
+                    <label class="switch">
+                        <input type="checkbox" id="swLines" onchange="setSetting('lineNumbers', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-group switch-row">
+                    <span class="setting-label">Màu code (giống PyCharm)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="swHighlight" onchange="setSetting('highlight', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-group">
+                    <button class="modal-btn danger" style="width: 100%;" onclick="resetSettings()">↺ Reset về mặc định</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="closeModal('settingsModal')">Xong</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         MODALS (C++)
+         ========================================================== -->
+    <!-- Modal đặt tên tab C++ -->
+    <div class="modal-overlay" id="cppNameTabModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Đặt tên tab mới</span>
+                <button class="modal-btn" onclick="closeModal('cppNameTabModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="cppNewTabName" placeholder="Nhập tên tab..." maxlength="30">
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('cppNameTabModal')">Hủy</button>
+                <button class="modal-btn primary" onclick="cppConfirmAddTab()">Thêm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận xóa code C++ -->
+    <div class="modal-overlay" id="cppConfirmClearModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>⚠️ Xóa code</span>
+                <button class="modal-btn" onclick="closeModal('cppConfirmClearModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa toàn bộ code trong bàn làm việc không?<br><br>
+                Hành động này <b>không thể hoàn tác</b>.
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('cppConfirmClearModal')">Hủy</button>
+                <button class="modal-btn danger" onclick="cppDoClear()">Xóa tất cả</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Load tab C++ -->
+    <div class="modal-overlay" id="cppLoadTabModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Load tab đã lưu</span>
+                <button class="modal-btn" onclick="closeModal('cppLoadTabModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="saved-tab-list" id="cppSavedTabList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('cppLoadTabModal')">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận xóa tab đã lưu C++ -->
+    <div class="modal-overlay" id="cppConfirmDeleteSavedModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>⚠️ Xóa tab đã lưu</span>
+                <button class="modal-btn" onclick="closeModal('cppConfirmDeleteSavedModal')">✕</button>
+            </div>
+            <div class="modal-body" id="cppDeleteSavedBody">
+                Bạn có chắc muốn xóa tab đã lưu này không?
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('cppConfirmDeleteSavedModal')">Hủy</button>
+                <button class="modal-btn danger" onclick="cppConfirmDeleteSaved()">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Load tab C++ (trong AI chat) -->
+    <div class="modal-overlay" id="cppAiLoadModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Load tab -> bàn làm việc mini</span>
+                <button class="modal-btn" onclick="closeModal('cppAiLoadModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="saved-tab-list" id="cppAiSavedList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('cppAiLoadModal')">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==========================================================
+        // STATE GLOBAL
+        // ==========================================================
+        let tabs = [];
+        let currentTabIndex = -1;
+        let pyodide = null;
+        let viewMode = 'input'; // 'input' | 'output' | 'studio'
+
+        const DEFAULT_TAB = { id: 'default', name: 'default', code: '', output: '' };
+        const LS_SAVED_TABS = 'python_tools_saved_tabs';
+        const LS_SETTINGS = 'python_tools_settings';
+        const LS_CURRENT_TABS = 'python_tools_current_tabs';
+        const DEFAULT_SETTINGS = { theme: 'gray', tabSize: 4, lineNumbers: true, highlight: true };
+        let settings = { ...DEFAULT_SETTINGS };
+
+        // ==========================================================
+        // CÀI ĐẶT (SETTINGS) + LƯU TIẾN TRÌNH
+        // ==========================================================
+        function loadSettings() {
+            try {
+                return { ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem(LS_SETTINGS)) || {}) };
+            } catch (e) {
+                return { ...DEFAULT_SETTINGS };
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+        }
+
+        function openSettings() {
+            syncSettingsUI();
+            document.getElementById('settingsModal').classList.add('show');
+        }
+
+        function syncSettingsUI() {
+            document.querySelectorAll('#segTheme button').forEach(b => b.classList.toggle('active', b.dataset.value === settings.theme));
+            document.querySelectorAll('#segTabSize button').forEach(b => b.classList.toggle('active', Number(b.dataset.value) === settings.tabSize));
+            document.getElementById('swLines').checked = settings.lineNumbers;
+            document.getElementById('swHighlight').checked = settings.highlight;
+        }
+
+        function setSetting(key, value) {
+            settings[key] = (key === 'tabSize') ? Number(value) : value;
+            saveSettings();
+            applySettings();
+            syncSettingsUI();
+        }
+
+        function resetSettings() {
+            settings = { ...DEFAULT_SETTINGS };
+            saveSettings();
+            applySettings();
+            syncSettingsUI();
+            showToast('Đã reset cài đặt về mặc định!', 'success');
+        }
+
+        function applySettings() {
+            document.body.dataset.theme = settings.theme;
+            document.documentElement.style.setProperty('--tab-size', settings.tabSize);
+            const wrap = document.getElementById('editorWrap');
+            if (wrap) {
+                wrap.classList.toggle('highlight-on', settings.highlight);
+                wrap.classList.toggle('no-lines', !settings.lineNumbers);
+            }
+            refreshEditorDecorations();
+        }
+
+        // Tự lưu các tab đang mở (code + output) để không mất tiến trình
+        function persistTabs() {
+            if (currentTabIndex >= 0 && tabs[currentTabIndex]) saveTabData(tabs[currentTabIndex]);
+            try {
+                localStorage.setItem(LS_CURRENT_TABS, JSON.stringify({ tabs: tabs, currentTabIndex: currentTabIndex }));
+            } catch (e) { /* localStorage đầy -> bỏ qua */ }
+        }
+
+        function restoreTabs() {
+            try {
+                const data = JSON.parse(localStorage.getItem(LS_CURRENT_TABS));
+                if (data && Array.isArray(data.tabs) && data.tabs.length > 0) {
+                    tabs = data.tabs;
+                    currentTabIndex = Math.min(Math.max(data.currentTabIndex || 0, 0), tabs.length - 1);
+                    return true;
+                }
+            } catch (e) { }
+            return false;
+        }
+
+        // ==========================================================
+        // SỐ DÒNG + SYNTAX HIGHLIGHT (GIỐNG PYCHARM)
+        // ==========================================================
+        const PY_KEYWORDS = new Set(['False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield', 'match', 'case']);
+        const PY_BUILTINS = new Set(['print', 'len', 'range', 'input', 'int', 'str', 'float', 'list', 'dict', 'set', 'tuple', 'sum', 'min', 'max', 'abs', 'sorted', 'map', 'filter', 'enumerate', 'zip', 'open', 'type', 'isinstance', 'round', 'format', 'any', 'all', 'reversed', 'bytes', 'object', 'super', 'self', 'repr', 'hash', 'id', 'bin', 'hex', 'oct', 'chr', 'ord', 'divmod', 'pow', 'callable', 'getattr', 'setattr', 'hasattr', 'bool', 'complex', 'frozenset', 'slice', 'vars', 'dir', 'eval', 'exec', 'compile', 'next', 'iter', 'staticmethod', 'classmethod', 'property']);
+
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function highlightPython(code) {
+            const RE_WORD = /[A-Za-z_][A-Za-z0-9_]*/y;
+            const RE_NUM = /(0[xX][0-9a-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\d[\d_]*(?:\.[\d_]*)?(?:[eE][+-]?\d+)?[jJ]?)/y;
+            let html = '';
+            let i = 0;
+            const n = code.length;
+            while (i < n) {
+                const ch = code[i];
+                // Ghi chú #
+                if (ch === '#') {
+                    let j = code.indexOf('\n', i);
+                    if (j === -1) j = n;
+                    html += '<span class="tk-com">' + escHtml(code.slice(i, j)) + '</span>';
+                    i = j;
+                    continue;
+                }
+                // Chuỗi (hỗ trợ cả ''' và """)
+                if (ch === '"' || ch === "'") {
+                    let quote = ch, len = 1;
+                    if (code.startsWith(quote.repeat(3), i)) { quote = quote.repeat(3); len = 3; }
+                    let j = i + len;
+                    while (j < n) {
+                        if (code[j] === '\\') { j += 2; continue; }
+                        if (code.startsWith(quote, j)) { j += len; break; }
+                        if (len === 1 && code[j] === '\n') break;
+                        j++;
+                    }
+                    html += '<span class="tk-str">' + escHtml(code.slice(i, j)) + '</span>';
+                    i = j;
+                    continue;
+                }
+                // Decorator @...
+                if (ch === '@' && (i === 0 || /\s/.test(code[i - 1]))) {
+                    RE_WORD.lastIndex = i + 1;
+                    const m = RE_WORD.exec(code);
+                    if (m && m.index === i + 1) {
+                        html += '<span class="tk-dec">@' + escHtml(m[0]) + '</span>';
+                        i = m.index + m[0].length;
+                        continue;
+                    }
+                }
+                // Số
+                if (/[0-9]/.test(ch)) {
+                    RE_NUM.lastIndex = i;
+                    const m = RE_NUM.exec(code);
+                    if (m && m.index === i) {
+                        html += '<span class="tk-num">' + escHtml(m[0]) + '</span>';
+                        i += m[0].length;
+                        continue;
+                    }
+                }
+                // Từ khóa / hàm built-in / tên sau def, class
+                if (/[A-Za-z_]/.test(ch)) {
+                    RE_WORD.lastIndex = i;
+                    const m = RE_WORD.exec(code);
+                    const word = m[0];
+                    const after = code.slice(i + word.length);
+                    let cls = '';
+                    if (PY_KEYWORDS.has(word)) cls = 'tk-kw';
+                    else if (/\b(?:def|class)\s*$/.test(code.slice(0, i))) cls = 'tk-def';
+                    else if (PY_BUILTINS.has(word) && /^\s*\(/.test(after)) cls = 'tk-bi';
+                    html += cls ? '<span class="' + cls + '">' + escHtml(word) + '</span>' : escHtml(word);
+                    i += word.length;
+                    continue;
+                }
+                html += escHtml(ch);
+                i++;
+            }
+            return html;
+        }
+
+        function refreshEditorDecorations() {
+            const ta = document.getElementById('codeEditor');
+            if (!ta || !document.getElementById('editorWrap')) return;
+            updateGutter(ta);
+            updateHighlight(ta);
+            syncEditorScroll();
+        }
+
+        function updateGutter(ta) {
+            const lines = ta.value.split('\n').length;
+            let out = '';
+            for (let i = 1; i <= lines; i++) out += i + '\n';
+            document.getElementById('gutterInner').textContent = out;
+        }
+
+        function updateHighlight(ta) {
+            document.getElementById('highlightLayer').innerHTML = highlightPython(ta.value) + '\n';
+        }
+
+        function syncEditorScroll() {
+            const ta = document.getElementById('codeEditor');
+            document.getElementById('gutter').scrollTop = ta.scrollTop;
+            const hl = document.getElementById('highlightLayer');
+            hl.scrollTop = ta.scrollTop;
+            hl.scrollLeft = ta.scrollLeft;
+        }
+
+        let persistTimer = null;
+        function onEditorInput() {
+            refreshEditorDecorations();
+            clearTimeout(persistTimer);
+            persistTimer = setTimeout(persistTabs, 400);
+        }
+
+        // Phím Tab -> chèn số dấu cách theo cài đặt
+        function insertSpaces(ta) {
+            ta.setRangeText(' '.repeat(settings.tabSize), ta.selectionStart, ta.selectionEnd, 'end');
+            onEditorInput();
+        }
+
+        // ==========================================================
+        // TOAST (THÔNG BÁO CUSTOM)
+        // ==========================================================
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '✅', warning: '⚠️', info: 'ℹ️' };
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+                <span class="toast-msg"></span>
+                <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+            `;
+            toast.querySelector('.toast-msg').textContent = message;
+            container.appendChild(toast);
+
+            // Tự đóng sau thời gian
+            setTimeout(() => {
+                toast.classList.add('out');
+                setTimeout(() => toast.remove(), 250);
+            }, duration);
+        }
+
+        // ==========================================================
+        // CHUYỂN GIỮA SẢNH VÀ CÔNG TOOLS (HIỆU ỨNG LƯỚT)
+        // ==========================================================
+        function openTools(type) {
+            if (type === 'python') {
+                const hall = document.getElementById('hall');
+                const tools = document.getElementById('python-tools');
+                hall.classList.add('hidden');
+                tools.classList.add('active');
+                initPythonTools();
+            } else if (type === 'cpp') {
+                const hall = document.getElementById('hall');
+                const tools = document.getElementById('cpp-tools');
+                hall.classList.add('hidden');
+                tools.classList.add('active');
+                initCppTools();
+            }
+        }
+
+        function backToHall() {
+            const hall = document.getElementById('hall');
+            const tools = document.getElementById('python-tools');
+            tools.classList.remove('active');
+            hall.classList.remove('hidden');
+            void tools.offsetWidth;
+        }
+
+        function cppBackToHall() {
+            const hall = document.getElementById('hall');
+            const tools = document.getElementById('cpp-tools');
+            tools.classList.remove('active');
+            hall.classList.remove('hidden');
+            void tools.offsetWidth;
+        }
+
+        function notAvailable() {
+            showToast('Công cụ này chưa ra mắt. Vui lòng quay lại sau!', 'warning');
+        }
+
+        // ==========================================================
+        // KHỞI TẠO PYTHON TOOLS
+        // ==========================================================
+        function initPythonTools() {
+            if (tabs.length === 0) {
+                tabs = [ { ...DEFAULT_TAB, name: 'default' } ];
+                currentTabIndex = 0;
+            }
+            setView('input'); // mặc định chỉ hiện input
+            renderTabBar();
+            loadTabData(tabs[currentTabIndex]);
+        }
+
+        // ==========================================================
+        // VIEW MODE: INPUT / OUTPUT / STUDIO
+        // ==========================================================
+        function setView(mode) {
+            viewMode = mode;
+            const container = document.getElementById('viewContainer');
+            container.className = 'view-container mode-' + mode;
+
+            // Cập highlight nút Input/Output
+            document.getElementById('inputViewBtn').classList.toggle('active', mode === 'input' || mode === 'studio');
+            document.getElementById('outputViewBtn').classList.toggle('active', mode === 'output' || mode === 'studio');
+        }
+
+        // Nút Studio: bấm lần 1 -> studio (chia đôi), bấm lần 2 -> input
+        function toggleStudio() {
+            if (viewMode === 'studio') {
+                setView('input');
+                showToast('Đã thoát Studio, chỉ hiện Input.', 'info');
+            } else {
+                setView('studio');
+                showToast('Studio: hiện Input + Output chia đôi.', 'info');
+            }
+        }
+
+        // ==========================================================
+        // TAB BAR
+        // ==========================================================
+        function renderTabBar() {
+            const tabBar = document.getElementById('tabBar');
+            tabBar.innerHTML = '';
+
+            tabs.forEach((tab, index) => {
+                const tabEl = document.createElement('div');
+                tabEl.className = 'tab' + (index === currentTabIndex ? ' active' : '');
+                tabEl.onclick = () => selectTab(index);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = tab.name;
+                tabEl.appendChild(nameSpan);
+
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'tab-close';
+                closeBtn.innerHTML = '✕';
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    closeTab(index);
+                };
+                tabEl.appendChild(closeBtn);
+
+                tabBar.appendChild(tabEl);
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'tab-add';
+            addBtn.innerHTML = '＋';
+            addBtn.title = 'Thêm tab';
+            addBtn.onclick = () => openNameTabModal();
+            tabBar.appendChild(addBtn);
+
+            const actions = document.createElement('div');
+            actions.className = 'tab-actions';
+            actions.innerHTML = `
+                <button class="tab-action-btn" onclick="saveCurrentTab()">Save tab</button>
+                <button class="tab-action-btn" onclick="openLoadTabModal()">Load tab</button>
+            `;
+            tabBar.appendChild(actions);
+        }
+
+        function selectTab(index) {
+            saveTabData(tabs[currentTabIndex]);
+            currentTabIndex = index;
+            renderTabBar();
+            loadTabData(tabs[currentTabIndex]);
+        }
+
+        function closeTab(index) {
+            if (tabs.length <= 1) {
+                showToast('Không thể xóa tab cuối cùng! Cần ít nhất 1 tab.', 'warning');
+                return;
+            }
+            tabs.splice(index, 1);
+            if (currentTabIndex >= tabs.length) currentTabIndex = tabs.length - 1;
+            else if (index < currentTabIndex) currentTabIndex--;
+            renderTabBar();
+            loadTabData(tabs[currentTabIndex]);
+        }
+
+        function openNameTabModal() {
+            document.getElementById('newTabName').value = '';
+            document.getElementById('nameTabModal').classList.add('show');
+            setTimeout(() => document.getElementById('newTabName').focus(), 100);
+        }
+
+        function confirmAddTab() {
+            const name = document.getElementById('newTabName').value.trim() || 'New Tab';
+            saveTabData(tabs[currentTabIndex]);
+            tabs.push({ id: 'tab_' + Date.now(), name: name, code: '', output: '' });
+            currentTabIndex = tabs.length - 1;
+            closeModal('nameTabModal');
+            renderTabBar();
+            loadTabData(tabs[currentTabIndex]);
+        }
+
+        function saveCurrentTab() {
+            saveTabData(tabs[currentTabIndex]);
+            const saved = JSON.parse(localStorage.getItem(LS_SAVED_TABS) || '[]');
+            const existingIndex = saved.findIndex(t => t.id === tabs[currentTabIndex].id);
+            if (existingIndex >= 0) saved[existingIndex] = { ...tabs[currentTabIndex] };
+            else saved.push({ ...tabs[currentTabIndex] });
+            localStorage.setItem(LS_SAVED_TABS, JSON.stringify(saved));
+            showToast('Đã lưu tab "' + tabs[currentTabIndex].name + '"!', 'success');
+        }
+
+        function openLoadTabModal() {
+            const saved = JSON.parse(localStorage.getItem(LS_SAVED_TABS) || '[]');
+            const list = document.getElementById('savedTabList');
+            list.innerHTML = '';
+
+            if (saved.length === 0) {
+                list.innerHTML = '<div class="saved-empty">Chưa có tab nào được lưu.</div>';
+            } else {
+                saved.forEach((tab, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'saved-tab-item';
+                    item.onclick = () => {
+                        tabs[currentTabIndex] = { ...tab };
+                        closeModal('loadTabModal');
+                        renderTabBar();
+                        loadTabData(tabs[currentTabIndex]);
+                    };
+                    item.innerHTML = `
+                        <span class="name">${tab.name}</span>
+                        <span class="del" onclick="event.stopPropagation(); askDeleteSaved(${index})">🗑️</span>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+
+            document.getElementById('loadTabModal').classList.add('show');
+        }
+
+        let deleteSavedIndex = null;
+        function askDeleteSaved(index) {
+            deleteSavedIndex = index;
+            document.getElementById('deleteSavedBody').innerHTML = 'Bạn có chắc muốn xóa tab đã lưu này không?<br><br>Hành động này <b>không thể hoàn tác</b>.';
+            document.getElementById('confirmDeleteSavedModal').classList.add('show');
+        }
+
+        function confirmDeleteSaved() {
+            const saved = JSON.parse(localStorage.getItem(LS_SAVED_TABS) || '[]');
+            if (deleteSavedIndex !== null && saved[deleteSavedIndex]) {
+                saved.splice(deleteSavedIndex, 1);
+                localStorage.setItem(LS_SAVED_TABS, JSON.stringify(saved));
+                deleteSavedIndex = null;
+                closeModal('confirmDeleteSavedModal');
+                openLoadTabModal();
+            }
+        }
+
+        // ==========================================================
+        // LƯU / TẢI DỮ LIỆU TAB
+        // ==========================================================
+        function saveTabData(tab) {
+            tab.code = document.getElementById('codeEditor').value;
+            tab.output = document.getElementById('outputArea').value;
+        }
+
+        function loadTabData(tab) {
+            document.getElementById('codeEditor').value = tab.code || '';
+            document.getElementById('outputArea').value = tab.output || '';
+            refreshEditorDecorations();
+            persistTabs();
+        }
+
+        // ==========================================================
+        // CONTROLS: SAO CHÉP / XÓA / CHẠY
+        // ==========================================================
+        function copyCode() {
+            const code = document.getElementById('codeEditor').value;
+            if (!code.trim()) {
+                showToast('Không có code để sao chép!', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Đã sao chép code!', 'success');
+            });
+        }
+
+        function confirmClear() {
+            document.getElementById('confirmClearModal').classList.add('show');
+        }
+
+        function doClear() {
+            document.getElementById('codeEditor').value = '';
+            document.getElementById('outputArea').value = '';
+            closeModal('confirmClearModal');
+            refreshEditorDecorations();
+            persistTabs();
+            showToast('Đã xóa tất cả code.', 'info');
+        }
+
+        // ==========================================================
+        // PYTHON EXECUTION (PYODIDE)
+        // ==========================================================
+        async function loadPyodideRuntime() {
+            if (!pyodide) {
+                if (typeof loadPyodide === 'undefined') {
+                    throw new Error('Không thể tải Pyodide. Kiểm tra kết nối internet.');
+                }
+                pyodide = await loadPyodide({
+                    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/'
+                });
+                await pyodide.runPython('import math, random, json, sys');
+            }
+            return pyodide;
+        }
+
+        async function runCode() {
+            const code = document.getElementById('codeEditor').value;
+            const outputArea = document.getElementById('outputArea');
+
+            if (!code.trim()) {
+                showToast('Viết code trước khi chạy!', 'warning');
+                return;
+            }
+
+            // Đang chỉ hiện Input -> tự chuyển sang Output để xem kết quả
+            if (viewMode === 'input') setView('output');
+
+            outputArea.value = '⏳ Đang khởi tạo Python runtime...\n';
+
+            try {
+                const pyodide = await loadPyodideRuntime();
+                outputArea.value = '';
+                pyodide.setStdout({ batched: (text) => {
+                    outputArea.value += text + '\n';
+                }});
+                pyodide.setStderr({ batched: (text) => {
+                    outputArea.value += '❌ ' + text + '\n';
+                }});
+
+                const result = await pyodide.runPython(code);
+                if (result !== undefined && result !== null) {
+                    outputArea.value += String(result) + '\n';
+                }
+                if (!outputArea.value.trim()) {
+                    outputArea.value = '✅ Chạy thành công (không có output).';
+                }
+                showToast('Chạy code thành công!', 'success');
+            } catch (err) {
+                const errMsg = (err && err.message) ? err.message : String(err);
+                outputArea.value = '❌ Lỗi:\n' + errMsg;
+                console.error('Python error:', err);
+                showToast('Lỗi: ' + errMsg.split('\n')[0], 'warning');
+            }
+            persistTabs();
+        }
+
+        // ==========================================================
+        // SIDEBAR: TẢI / LƯU FILE .PY + AI
+        // ==========================================================
+        function saveFile() {
+            saveTabData(tabs[currentTabIndex]);
+            const code = tabs[currentTabIndex].code;
+            if (!code.trim()) {
+                showToast('Không có code để lưu!', 'warning');
+                return;
+            }
+            const blob = new Blob([code], { type: 'text/x-python' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (tabs[currentTabIndex].name || 'script') + '.py';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Đã lưu file .py!', 'success');
+        }
+
+        function loadFile() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.py';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    saveTabData(tabs[currentTabIndex]);
+                    tabs.push({
+                        id: 'tab_' + Date.now(),
+                        name: file.name.replace('.py', ''),
+                        code: ev.target.result,
+                        output: ''
+                    });
+                    currentTabIndex = tabs.length - 1;
+                    renderTabBar();
+                    loadTabData(tabs[currentTabIndex]);
+                    showToast('Đã tải file ' + file.name + '!', 'success');
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
+        }
+
+        // ==========================================================
+        // AI CHAT (GEMINI API)
+        // ==========================================================
+        const LS_AI_CFG = 'python_tools_ai_cfg';
+        const LS_AI_HISTORY = 'python_tools_ai_history';
+        const AI_DEFAULTS = {
+            model: 'gemini-3.6-flash',
+            apiKey: 'AQ.Ab8RN6JELt_JDCuhlN81i9uHANCkojmdsIdGWzRKfboi4-tCLQ'
+        };
+        let aiCfg = { ...AI_DEFAULTS };
+        let aiHistory = [];
+
+        const AI_SYSTEM_PROMPT = 'Bạn là trợ lý lập trình Python chuyên nghiệp nhúng trong một IDE web.\n' +
+            '- Giỏi code Python, thuật toán, thư viện chuẩn và các lỗi thường gặp.\n' +
+            '- Giải thích chi tiết, kèm ví dụ code khi cần.\n' +
+            '- Thẳng thắn, đi thẳng vào vấn đề, không vòng vo, không sáo rỗng.\n' +
+            '- Ưu tiên đưa code đúng + giải thích ngắn gọn vì sao.\n' +
+            '- Trả lời bằng ngôn ngữ người dùng đang dùng (mặc định tiếng Việt).';
+
+        function loadAICfg() {
+            try { aiCfg = { ...AI_DEFAULTS, ...(JSON.parse(localStorage.getItem(LS_AI_CFG)) || {}) }; }
+            catch (e) { aiCfg = { ...AI_DEFAULTS }; }
+            // Model cũ không còn dùng được với api-key hiện tại -> ép về model mặc định
+            if (aiCfg.model === 'gemini-2.5-flash') aiCfg.model = AI_DEFAULTS.model;
+        }
+        function saveAICfg() { localStorage.setItem(LS_AI_CFG, JSON.stringify(aiCfg)); }
+        function loadAIHistory() {
+            try { aiHistory = JSON.parse(localStorage.getItem(LS_AI_HISTORY)) || []; }
+            catch (e) { aiHistory = []; }
+        }
+        function saveAIHistory() {
+            try { localStorage.setItem(LS_AI_HISTORY, JSON.stringify(aiHistory.slice(-60))); } catch (e) {}
+        }
+
+        function openAI() {
+            document.getElementById('python-tools').classList.remove('active');
+            document.getElementById('aiView').classList.add('active');
+            updateModelLabel();
+            renderChat();
+            setTimeout(() => document.getElementById('chatInput').focus(), 100);
+        }
+
+        function closeAI() {
+            document.getElementById('aiView').classList.remove('active');
+            document.getElementById('python-tools').classList.add('active');
+            closeMini();
+        }
+
+        function updateModelLabel() {
+            document.getElementById('chatModelLabel').textContent = aiCfg.model;
+            const btnLabel = document.getElementById('modelBtnLabel');
+            if (btnLabel) btnLabel.textContent = aiCfg.model;
+        }
+
+        function renderMd(text) {
+            let html = '';
+            const parts = text.split('```');
+            parts.forEach((part, idx) => {
+                if (idx % 2 === 1) {
+                    let code = part.replace(/^[a-zA-Z0-9_+#.-]*\n?/, '');
+                    html += '<div class="code-block"><button class="code-copy" onclick="copyCodeBlock(this)" title="Sao chép code">📋</button><pre>' + escHtml(code) + '</pre></div>';
+                } else {
+                    let seg = escHtml(part);
+                    seg = seg.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+                    seg = seg.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+                    html += seg.replace(/\n/g, '<br>');
+                }
+            });
+            return html;
+        }
+
+        function addMsg(role, text) {
+            const wrap = document.getElementById('chatMessages');
+            const el = document.createElement('div');
+            el.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+            el.dataset.raw = text;
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            body.innerHTML = renderMd(text);
+            el.appendChild(body);
+            if (role !== 'user') {
+                const actions = document.createElement('div');
+                actions.className = 'msg-actions';
+                actions.innerHTML = '<button class="msg-copy" onclick="copyMsg(this)" title="Sao chép tin nhắn">📋</button>';
+                el.appendChild(actions);
+            }
+            wrap.appendChild(el);
+            scrollChat();
+            return el;
+        }
+
+        function scrollChat() {
+            const w = document.getElementById('chatMessages');
+            w.scrollTop = w.scrollHeight;
+        }
+
+        // Sao chép code trong khung code của tin nhắn
+        function copyCodeBlock(btn) {
+            const pre = btn.parentElement.querySelector('pre');
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                btn.textContent = '✅';
+                setTimeout(() => btn.textContent = '📋', 1500);
+            });
+        }
+
+        // Sao chép toàn bộ tin nhắn của bot
+        function copyMsg(btn) {
+            const msg = btn.closest('.msg');
+            navigator.clipboard.writeText(msg.dataset.raw || '').then(() => {
+                btn.textContent = '✅';
+                setTimeout(() => btn.textContent = '📋', 1500);
+            });
+        }
+
+        function renderChat() {
+            const w = document.getElementById('chatMessages');
+            w.innerHTML = '';
+            if (!aiHistory.length) {
+                addMsg('ai', '👋 Chào bạn! Mình là trợ lý **Python** — giỏi code, giải thích chi tiết, thẳng thắn không vòng vo.\n\nLệnh: `/help` • `/setkey <api-key>` • `/setmodel <model-id>` • `/model`');
+            } else {
+                aiHistory.forEach(m => addMsg(m.role, m.display || m.text));
+            }
+            scrollChat();
+        }
+
+        function handleChatCommand(cmd) {
+            const sp = cmd.split(/\s+/);
+            const c = sp[0].toLowerCase();
+            const arg = sp.slice(1).join(' ').trim();
+            if (c === '/setkey') {
+                if (!arg) { addMsg('ai', 'Cách dùng: `/setkey <api-key>`'); return; }
+                aiCfg.apiKey = arg; saveAICfg();
+                addMsg('ai', '✅ Đã lưu API key mới.');
+            } else if (c === '/setmodel') {
+                if (!arg) { addMsg('ai', 'Cách dùng: `/setmodel <model-id>`\nVí dụ: `/setmodel gemini-2.5-flash`'); return; }
+                aiCfg.model = arg; saveAICfg(); updateModelLabel();
+                addMsg('ai', '✅ Đã chuyển model sang: `' + arg + '`');
+            } else if (c === '/model') {
+                addMsg('ai', '**Model hiện tại:** `' + aiCfg.model + '`\n**API key:** `' + aiCfg.apiKey + '`');
+            } else if (c === '/help') {
+                addMsg('ai',
+                    '**📖 Hướng dẫn sử dụng lệnh**\n\n' +
+                    '`/help` — Hiện bảng hướng dẫn này\n' +
+                    '`/setkey <api-key>` — Đặt API key mới\n' +
+                    '`/setmodel <model-id>` — Đổi model theo id\n' +
+                    '`/model` — Show model và API key hiện tại\n\n' +
+                    '💡 **Mẹo:**\n' +
+                    '- Gõ `/` sẽ hiện **gợi ý cú pháp**, bấm vào gợi ý (hoặc phím Tab) để điền nhanh\n' +
+                    '- Nút **＋** cạnh ô chat: gửi file .py cho bot đọc và làm theo yêu cầu\n' +
+                    '- Nút **model:** : thêm model mới và chọn model đang dùng');
+            } else {
+                addMsg('ai', 'Không biết lệnh `' + c + '`.\nGõ `/help` để xem bảng lệnh.');
+            }
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            renderHints();
+            if (text.startsWith('/')) { handleChatCommand(text); return; }
+            if (pendingFile) {
+                const fileName = pendingFile.name;
+                const lines = pendingFile.content.split('\n').length;
+                const display = text + '\n📎 *Đã gửi file `' + fileName + '` (' + lines + ' dòng)*';
+                const payload = 'Người dùng đính kèm file: ' + fileName + '\n' +
+                    '```python\n' + pendingFile.content + '\n```\n' +
+                    'Yêu cầu với file trên: ' + text;
+                clearAttachment();
+                addMsg('user', display);
+                aiHistory.push({ role: 'user', text: payload, display: display });
+            } else {
+                addMsg('user', text);
+                aiHistory.push({ role: 'user', text: text });
+            }
+            saveAIHistory();
+            callGemini();
+        }
+
+        async function callGemini() {
+            const msgEl = addMsg('ai', 'Đang suy nghĩ...');
+            const bodyEl = msgEl.querySelector('.msg-body');
+            try {
+                const res = await fetch(
+                    'https://generativelanguage.googleapis.com/v1beta/models/' +
+                    encodeURIComponent(aiCfg.model) + ':streamGenerateContent?alt=sse&key=' +
+                    encodeURIComponent(aiCfg.apiKey),
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            systemInstruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
+                            contents: aiHistory.slice(-20).map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+                            generationConfig: { temperature: 0.6 }
+                        })
+                    }
+                );
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error('HTTP ' + res.status + ' — ' + errText.slice(0, 400));
+                }
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buf = '', full = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += decoder.decode(value, { stream: true });
+                    const lines = buf.split('\n');
+                    buf = lines.pop();
+                    for (const line of lines) {
+                        const t = line.trim();
+                        if (!t.startsWith('data:')) continue;
+                        const payload = t.slice(5).trim();
+                        if (!payload || payload === '[DONE]') continue;
+                        try {
+                            const j = JSON.parse(payload);
+                            const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+                            for (const p of parts) if (p.text && !p.thought) full += p.text;
+                        } catch (e) {}
+                    }
+                    bodyEl.innerHTML = renderMd(full);
+                    scrollChat();
+                }
+                if (!full.trim()) full = '(AI không trả về nội dung)';
+                bodyEl.innerHTML = renderMd(full);
+                msgEl.dataset.raw = full;
+                aiHistory.push({ role: 'model', text: full });
+                saveAIHistory();
+            } catch (err) {
+                const errFull = '❌ Lỗi gọi API: ' + String(err.message || err);
+                bodyEl.innerHTML = '<span class="chat-error">' + escHtml(errFull) + '</span>';
+                msgEl.dataset.raw = errFull;
+            }
+            scrollChat();
+        }
+
+        // ==========================================================
+        // GỢI Ý LỆNH + GỬI FILE .PY + MENU MODEL
+        // ==========================================================
+        const LS_AI_MODELS = 'python_tools_ai_models';
+        const AI_COMMANDS = [
+            { cmd: '/help', syn: '/help', desc: 'Hiện bảng hướng dẫn sử dụng lệnh' },
+            { cmd: '/setkey', syn: '/setkey <api-key>', desc: 'Set API key' },
+            { cmd: '/setmodel', syn: '/setmodel <model-id>', desc: 'Set model theo id' },
+            { cmd: '/model', syn: '/model', desc: 'Show model và api key hiện tại' }
+        ];
+        let aiModels = [AI_DEFAULTS.model];
+        let pendingFile = null;
+
+        function loadAIModels() {
+            try {
+                const m = JSON.parse(localStorage.getItem(LS_AI_MODELS));
+                if (Array.isArray(m) && m.length) {
+                    aiModels = m;
+                    if (!aiModels.includes(AI_DEFAULTS.model)) aiModels.unshift(AI_DEFAULTS.model);
+                }
+            } catch (e) { }
+        }
+        function saveAIModels() { localStorage.setItem(LS_AI_MODELS, JSON.stringify(aiModels)); }
+
+        // --- Gợi ý cú pháp khi gõ lệnh ---
+        function currentHintMatches() {
+            const v = document.getElementById('chatInput').value.trim().toLowerCase();
+            if (!v.startsWith('/')) return [];
+            return AI_COMMANDS.filter(c => c.cmd.startsWith(v) || c.syn.toLowerCase().startsWith(v));
+        }
+
+        function renderHints() {
+            const box = document.getElementById('chatHints');
+            const matches = currentHintMatches();
+            if (!matches.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.innerHTML = matches.map((m, i) =>
+                '<div class="chat-hint-item' + (i === 0 ? ' sel' : '') + '" onclick="applyHint(\'' + m.cmd + '\')">' +
+                '<span class="cmd">' + m.cmd + '</span>' +
+                '<span class="syn">' + m.syn + '</span>' +
+                '<span class="desc">' + m.desc + '</span>' +
+                '</div>'
+            ).join('');
+            box.style.display = 'block';
+        }
+
+        function applyHint(cmd) {
+            const input = document.getElementById('chatInput');
+            input.value = cmd + ' ';
+            renderHints();
+            input.focus();
+        }
+
+        // --- Gửi file .py cho bot đọc ---
+        function pickPyFile() {
+            const inp = document.createElement('input');
+            inp.type = 'file';
+            inp.accept = '.py';
+            inp.onchange = (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    pendingFile = { name: f.name, content: ev.target.result };
+                    document.getElementById('attachName').textContent = f.name + ' (' + pendingFile.content.split('\n').length + ' dòng)';
+                    document.getElementById('attachRow').style.display = 'flex';
+                    showToast('Đã đính kèm ' + f.name + '. Gõ yêu cầu rồi bấm Gửi!', 'info');
+                };
+                reader.readAsText(f);
+            };
+            inp.click();
+        }
+
+        function clearAttachment() {
+            pendingFile = null;
+            document.getElementById('attachRow').style.display = 'none';
+        }
+
+        // --- Menu model: thêm model + chọn model ---
+        function toggleModelMenu() {
+            const m = document.getElementById('modelMenu');
+            m.classList.toggle('show');
+            if (m.classList.contains('show')) renderModelList();
+        }
+
+        function hideModelMenu() {
+            document.getElementById('modelMenu').classList.remove('show');
+        }
+
+        function renderModelList() {
+            const list = document.getElementById('modelList');
+            list.innerHTML = '';
+            aiModels.forEach(id => {
+                const it = document.createElement('div');
+                it.className = 'model-item' + (id === aiCfg.model ? ' active' : '');
+                const name = document.createElement('span');
+                name.textContent = id === aiCfg.model ? '✓ ' + id : id;
+                it.appendChild(name);
+                it.onclick = () => {
+                    aiCfg.model = id;
+                    saveAICfg();
+                    updateModelLabel();
+                    renderModelList();
+                    showToast('Đã chọn model: ' + id, 'success');
+                };
+                list.appendChild(it);
+            });
+        }
+
+        function addModel() {
+            const inp = document.getElementById('newModelInput');
+            const id = inp.value.trim();
+            if (!id) { showToast('Nhập model-id trước!', 'warning'); return; }
+            if (!aiModels.includes(id)) { aiModels.push(id); saveAIModels(); }
+            aiCfg.model = id;
+            saveAICfg();
+            updateModelLabel();
+            inp.value = '';
+            renderModelList();
+            showToast('Đã thêm và chọn model: ' + id, 'success');
+        }
+
+        // ==========================================================
+        // LOAD/SAVE TAB + CỬA SỔ BÀN LÀM VIỆC MINI
+        // ==========================================================
+        let miniTabId = null;
+
+        function aiSaveTab() {
+            saveTabData(tabs[currentTabIndex]);
+            const saved = JSON.parse(localStorage.getItem(LS_SAVED_TABS) || '[]');
+            const i = saved.findIndex(t => t.id === tabs[currentTabIndex].id);
+            if (i >= 0) saved[i] = { ...tabs[currentTabIndex] };
+            else saved.push({ ...tabs[currentTabIndex] });
+            localStorage.setItem(LS_SAVED_TABS, JSON.stringify(saved));
+            showToast('Đã lưu tab "' + tabs[currentTabIndex].name + '"!', 'success');
+        }
+
+        function aiLoadTab() {
+            const saved = JSON.parse(localStorage.getItem(LS_SAVED_TABS) || '[]');
+            const list = document.getElementById('aiSavedList');
+            list.innerHTML = '';
+            if (!saved.length) {
+                list.innerHTML = '<div class="saved-empty">Chưa có tab nào được lưu.</div>';
+            } else {
+                saved.forEach(tab => {
+                    const item = document.createElement('div');
+                    item.className = 'saved-tab-item';
+                    const name = document.createElement('span');
+                    name.className = 'name';
+                    name.textContent = tab.name;
+                    item.appendChild(name);
+                    item.onclick = () => { closeModal('aiLoadModal'); openMini(tab); };
+                    list.appendChild(item);
+                });
+            }
+            document.getElementById('aiLoadModal').classList.add('show');
+        }
+
+        function openMini(tab) {
+            miniTabId = tab.id;
+            document.getElementById('miniName').textContent = tab.name;
+            document.getElementById('miniCode').value = tab.code || '';
+            document.getElementById('miniOut').value = tab.output || '';
+            const w = document.getElementById('miniWin');
+            if (!w.classList.contains('show')) {
+                w.classList.add('show');
+                w.style.left = Math.max(70, Math.round((window.innerWidth - 460) / 2)) + 'px';
+                w.style.top = '100px';
+            }
+        }
+
+        function closeMini() { document.getElementById('miniWin').classList.remove('show'); }
+
+        async function miniRun() {
+            const code = document.getElementById('miniCode').value;
+            const out = document.getElementById('miniOut');
+            if (!code.trim()) { out.value = 'Không có code để chạy!'; return; }
+            out.value = '⏳ Đang chạy...';
+            try {
+                const py = await loadPyodideRuntime();
+                out.value = '';
+                py.setStdout({ batched: t => { out.value += t + '\n'; } });
+                py.setStderr({ batched: t => { out.value += '❌ ' + t + '\n'; } });
+                await py.runPython(code);
+                if (!out.value.trim()) out.value = '✅ Chạy thành công (không có output).';
+            } catch (err) {
+                out.value = '❌ Lỗi:\n' + (err.message || err);
+            }
+        }
+
+        function miniCopy() {
+            const code = document.getElementById('miniCode').value;
+            if (!code.trim()) { showToast('Không có code để sao chép!', 'warning'); return; }
+            navigator.clipboard.writeText(code).then(() => showToast('Đã sao chép code!', 'success'));
+        }
+
+        function miniClear() {
+            document.getElementById('miniCode').value = '';
+            document.getElementById('miniOut').value = '';
+        }
+
+        function miniSave() {
+            const saved = JSON.parse(localStorage.getItem(LS_SAVED_TABS) || '[]');
+            const data = {
+                id: miniTabId,
+                name: document.getElementById('miniName').textContent,
+                code: document.getElementById('miniCode').value,
+                output: document.getElementById('miniOut').value
+            };
+            const i = saved.findIndex(t => t.id === miniTabId);
+            if (i >= 0) saved[i] = data; else saved.push(data);
+            localStorage.setItem(LS_SAVED_TABS, JSON.stringify(saved));
+            showToast('Đã lưu thay đổi!', 'success');
+        }
+
+        function initMiniDrag() {
+            const win = document.getElementById('miniWin');
+            const title = win.querySelector('.mini-title');
+            let dragging = false, ox = 0, oy = 0;
+            title.addEventListener('mousedown', e => {
+                if (e.target.classList.contains('mini-x')) return;
+                dragging = true;
+                const r = win.getBoundingClientRect();
+                ox = e.clientX - r.left;
+                oy = e.clientY - r.top;
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                win.style.left = Math.max(0, e.clientX - ox) + 'px';
+                win.style.top = Math.max(0, e.clientY - oy) + 'px';
+            });
+            document.addEventListener('mouseup', () => dragging = false);
+        }
+
+        // ==========================================================
+        // MODAL HELPERS
+        // ==========================================================
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        // ==========================================================
+        // KHỞI TẠO
+        // ==========================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            settings = loadSettings();
+            if (!restoreTabs()) {
+                tabs = [ { ...DEFAULT_TAB, name: 'default' } ];
+                currentTabIndex = 0;
+            }
+            applySettings();
+
+            const editor = document.getElementById('codeEditor');
+            editor.addEventListener('input', onEditorInput);
+            editor.addEventListener('scroll', syncEditorScroll);
+            editor.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    insertSpaces(editor);
+                }
+            });
+
+            loadTabData(tabs[currentTabIndex]);
+
+            // AI chat khởi tạo
+            loadAICfg();
+            loadAIHistory();
+            loadAIModels();
+            updateModelLabel();
+            renderHints();
+
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('input', renderHints);
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChat();
+                } else if (e.key === 'Tab') {
+                    const matches = currentHintMatches();
+                    if (matches.length) {
+                        e.preventDefault();
+                        applyHint(matches[0].cmd);
+                    }
+                } else if (e.key === 'Escape') {
+                    document.getElementById('chatHints').style.display = 'none';
+                    hideModelMenu();
+                }
+            });
+
+            // Bấm ra ngoài -> đóng menu model
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('modelMenu');
+                if (menu.classList.contains('show') && !e.target.closest('#modelMenu') && !e.target.closest('.model-btn')) hideModelMenu();
+                const cppMenu = document.getElementById('cppModelMenu');
+                if (cppMenu.classList.contains('show') && !e.target.closest('#cppModelMenu') && !e.target.closest('.model-btn')) cppHideModelMenu();
+            });
+
+            initMiniDrag();
+
+            // ===== C++ TOOLS INIT =====
+            cppSettings = loadSettings(); // dùng chung settings
+            if (!cppRestoreTabs()) {
+                cppTabs = [{ ...CPP_DEFAULT_TAB, name: 'default' }];
+                cppCurrentTabIndex = 0;
+            }
+
+            const cppEditor = document.getElementById('cppCodeEditor');
+            cppEditor.addEventListener('input', cppOnEditorInput);
+            cppEditor.addEventListener('scroll', cppSyncEditorScroll);
+            cppEditor.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    cppInsertSpaces(cppEditor);
+                }
+            });
+
+            cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+
+            // C++ AI chat init
+            cppLoadAICfg();
+            cppLoadAIHistory();
+            cppLoadAIModels();
+            cppUpdateModelLabel();
+            cppRenderHints();
+
+            const cppChatInput = document.getElementById('cppChatInput');
+            cppChatInput.addEventListener('input', cppRenderHints);
+            cppChatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    cppSendChat();
+                } else if (e.key === 'Tab') {
+                    const matches = cppCurrentHintMatches();
+                    if (matches.length) {
+                        e.preventDefault();
+                        cppApplyHint(matches[0].cmd);
+                    }
+                } else if (e.key === 'Escape') {
+                    document.getElementById('cppChatHints').style.display = 'none';
+                    cppHideModelMenu();
+                }
+            });
+
+            cppInitMiniDrag();
+        });
+
+        // ==========================================================
+        // ==================== C++ TOOLS ==========================
+        // ==========================================================
+
+        // ==========================================================
+        // C++ STATE
+        // ==========================================================
+        let cppTabs = [];
+        let cppCurrentTabIndex = -1;
+        let cppViewMode = 'input';
+
+        const CPP_DEFAULT_TAB = { id: 'cpp_default', name: 'default', code: '', output: '' };
+        const CPP_LS_SAVED_TABS = 'cpp_tools_saved_tabs';
+        const CPP_LS_CURRENT_TABS = 'cpp_tools_current_tabs';
+
+        // ==========================================================
+        // C++ LƯU / KHÔI PHỤC TIẾN TRÌNH
+        // ==========================================================
+        function cppPersistTabs() {
+            if (cppCurrentTabIndex >= 0 && cppTabs[cppCurrentTabIndex]) cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+            try {
+                localStorage.setItem(CPP_LS_CURRENT_TABS, JSON.stringify({ tabs: cppTabs, currentTabIndex: cppCurrentTabIndex }));
+            } catch (e) {}
+        }
+
+        function cppRestoreTabs() {
+            try {
+                const data = JSON.parse(localStorage.getItem(CPP_LS_CURRENT_TABS));
+                if (data && Array.isArray(data.tabs) && data.tabs.length > 0) {
+                    cppTabs = data.tabs;
+                    cppCurrentTabIndex = Math.min(Math.max(data.currentTabIndex || 0, 0), cppTabs.length - 1);
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        // ==========================================================
+        // C++ SYNTAX HIGHLIGHT
+        // ==========================================================
+        const CPP_KEYWORDS = new Set(['alignas','alignof','and','and_eq','asm','auto','bitand','bitor','bool','break','case','catch','char','char8_t','char16_t','char32_t','class','compl','concept','const','consteval','constexpr','constinit','const_cast','continue','co_await','co_return','co_yield','decltype','default','delete','do','double','dynamic_cast','else','enum','explicit','export','extern','false','float','for','friend','goto','if','inline','int','long','mutable','namespace','new','noexcept','not','not_eq','nullptr','operator','or','or_eq','private','protected','public','register','reinterpret_cast','requires','return','short','signed','sizeof','static','static_assert','static_cast','struct','switch','template','this','thread_local','throw','true','try','typedef','typeid','typename','union','unsigned','using','virtual','void','volatile','wchar_t','while','xor','xor_eq','override','final']);
+        const CPP_BUILTINS = new Set(['cout','cin','cerr','clog','endl','string','vector','map','set','pair','array','queue','stack','deque','list','priority_queue','unordered_map','unordered_set','sort','reverse','min','max','abs','pow','sqrt','ceil','floor','round','swap','find','count','lower_bound','upper_bound','next_permutation','prev_permutation','accumulate','distance','begin','end','size','empty','push_back','pop_back','push_front','pop_front','insert','erase','clear','front','back','top','emplace','emplace_back','make_pair','make_tuple','get','to_string','stoi','stol','stof','stod','getline','printf','scanf','puts','gets','strlen','strcmp','strcpy','strcat','memset','memcpy','malloc','calloc','free','rand','srand','time','clock','exit','system','NULL','EOF','INT_MAX','INT_MIN','LLONG_MAX','LLONG_MIN','SIZE_MAX','stdin','stdout','stderr','ios','fixed','setprecision','setw','setfill','left','right','noskipws','showpoint','boolalpha','bitset','complex','tuple','optional','variant','any','shared_ptr','unique_ptr','weak_ptr','make_shared','make_unique','move','forward','swap','numeric_limits']);
+
+        function highlightCpp(code) {
+            const RE_WORD = /[A-Za-z_][A-Za-z0-9_]*/y;
+            const RE_NUM = /(0[xX][0-9a-fA-F']+|0[bB][01']+|0[0-7']*|\d[\d']*(?:\.[\d']*)?(?:[eE][+-]?\d+)?[fFlLuU]*)/y;
+            let html = '';
+            let i = 0;
+            const n = code.length;
+            while (i < n) {
+                const ch = code[i];
+                // Single-line comment //
+                if (ch === '/' && i + 1 < n && code[i + 1] === '/') {
+                    let j = code.indexOf('\n', i);
+                    if (j === -1) j = n;
+                    html += '<span class="tk-com">' + escHtml(code.slice(i, j)) + '</span>';
+                    i = j;
+                    continue;
+                }
+                // Multi-line comment /* */
+                if (ch === '/' && i + 1 < n && code[i + 1] === '*') {
+                    let j = code.indexOf('*/', i + 2);
+                    if (j === -1) j = n; else j += 2;
+                    html += '<span class="tk-com">' + escHtml(code.slice(i, j)) + '</span>';
+                    i = j;
+                    continue;
+                }
+                // Preprocessor directive #include, #define, etc
+                if (ch === '#' && (i === 0 || code[i - 1] === '\n')) {
+                    let j = i + 1;
+                    while (j < n && code[j] !== '\n') {
+                        if (code[j] === '\\' && j + 1 < n && code[j + 1] === '\n') { j += 2; continue; }
+                        j++;
+                    }
+                    html += '<span class="tk-dec">' + escHtml(code.slice(i, j)) + '</span>';
+                    i = j;
+                    continue;
+                }
+                // Strings
+                if (ch === '"' || ch === "'") {
+                    let j = i + 1;
+                    while (j < n) {
+                        if (code[j] === '\\') { j += 2; continue; }
+                        if (code[j] === ch) { j++; break; }
+                        if (code[j] === '\n') break;
+                        j++;
+                    }
+                    html += '<span class="tk-str">' + escHtml(code.slice(i, j)) + '</span>';
+                    i = j;
+                    continue;
+                }
+                // Numbers
+                if (/[0-9]/.test(ch) || (ch === '.' && i + 1 < n && /[0-9]/.test(code[i + 1]))) {
+                    RE_NUM.lastIndex = i;
+                    const m = RE_NUM.exec(code);
+                    if (m && m.index === i) {
+                        html += '<span class="tk-num">' + escHtml(m[0]) + '</span>';
+                        i += m[0].length;
+                        continue;
+                    }
+                }
+                // Keywords / builtins / function names after type
+                if (/[A-Za-z_]/.test(ch)) {
+                    RE_WORD.lastIndex = i;
+                    const m = RE_WORD.exec(code);
+                    const word = m[0];
+                    const after = code.slice(i + word.length);
+                    let cls = '';
+                    if (CPP_KEYWORDS.has(word)) cls = 'tk-kw';
+                    else if (/\b(?:class|struct|enum)\s*$/.test(code.slice(0, i))) cls = 'tk-def';
+                    else if (CPP_BUILTINS.has(word)) cls = 'tk-bi';
+                    else if (/^\s*\(/.test(after) && !/\b(?:if|else|for|while|switch|catch|return|sizeof|decltype|alignof|typeid|noexcept|co_await|co_return|co_yield|throw|new|delete)\b/.test(word)) cls = 'tk-def';
+                    html += cls ? '<span class="' + cls + '">' + escHtml(word) + '</span>' : escHtml(word);
+                    i += word.length;
+                    continue;
+                }
+                html += escHtml(ch);
+                i++;
+            }
+            return html;
+        }
+
+        // ==========================================================
+        // C++ EDITOR DECORATIONS
+        // ==========================================================
+        function cppRefreshEditorDecorations() {
+            const ta = document.getElementById('cppCodeEditor');
+            if (!ta || !document.getElementById('cppEditorWrap')) return;
+            cppUpdateGutter(ta);
+            cppUpdateHighlight(ta);
+            cppSyncEditorScroll();
+        }
+
+        function cppUpdateGutter(ta) {
+            const lines = ta.value.split('\n').length;
+            let out = '';
+            for (let i = 1; i <= lines; i++) out += i + '\n';
+            document.getElementById('cppGutterInner').textContent = out;
+        }
+
+        function cppUpdateHighlight(ta) {
+            document.getElementById('cppHighlightLayer').innerHTML = highlightCpp(ta.value) + '\n';
+        }
+
+        function cppSyncEditorScroll() {
+            const ta = document.getElementById('cppCodeEditor');
+            document.getElementById('cppGutter').scrollTop = ta.scrollTop;
+            const hl = document.getElementById('cppHighlightLayer');
+            hl.scrollTop = ta.scrollTop;
+            hl.scrollLeft = ta.scrollLeft;
+        }
+
+        let cppPersistTimer = null;
+        function cppOnEditorInput() {
+            cppRefreshEditorDecorations();
+            clearTimeout(cppPersistTimer);
+            cppPersistTimer = setTimeout(cppPersistTabs, 400);
+        }
+
+        function cppInsertSpaces(ta) {
+            ta.setRangeText(' '.repeat(settings.tabSize), ta.selectionStart, ta.selectionEnd, 'end');
+            cppOnEditorInput();
+        }
+
+        // ==========================================================
+        // C++ APPLY SETTINGS (dùng chung settings nhưng áp dụng cho editor C++)
+        // ==========================================================
+        const origApplySettings = applySettings;
+        applySettings = function() {
+            origApplySettings();
+            const wrap = document.getElementById('cppEditorWrap');
+            if (wrap) {
+                wrap.classList.toggle('highlight-on', settings.highlight);
+                wrap.classList.toggle('no-lines', !settings.lineNumbers);
+            }
+            cppRefreshEditorDecorations();
+        };
+
+        // ==========================================================
+        // C++ INIT + VIEW MODE
+        // ==========================================================
+        function initCppTools() {
+            if (cppTabs.length === 0) {
+                cppTabs = [{ ...CPP_DEFAULT_TAB, name: 'default' }];
+                cppCurrentTabIndex = 0;
+            }
+            cppSetView('input');
+            cppRenderTabBar();
+            cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+            applySettings();
+        }
+
+        function cppSetView(mode) {
+            cppViewMode = mode;
+            const container = document.getElementById('cppViewContainer');
+            container.className = 'view-container mode-' + mode;
+            document.getElementById('cppInputViewBtn').classList.toggle('active', mode === 'input' || mode === 'studio');
+            document.getElementById('cppOutputViewBtn').classList.toggle('active', mode === 'output' || mode === 'studio');
+        }
+
+        function cppToggleStudio() {
+            if (cppViewMode === 'studio') {
+                cppSetView('input');
+                showToast('Đã thoát Studio, chỉ hiện Input.', 'info');
+            } else {
+                cppSetView('studio');
+                showToast('Studio: hiện Input + Output chia đôi.', 'info');
+            }
+        }
+
+        // ==========================================================
+        // C++ TAB BAR
+        // ==========================================================
+        function cppRenderTabBar() {
+            const tabBar = document.getElementById('cppTabBar');
+            tabBar.innerHTML = '';
+            cppTabs.forEach((tab, index) => {
+                const tabEl = document.createElement('div');
+                tabEl.className = 'tab' + (index === cppCurrentTabIndex ? ' active' : '');
+                tabEl.onclick = () => cppSelectTab(index);
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = tab.name;
+                tabEl.appendChild(nameSpan);
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'tab-close';
+                closeBtn.innerHTML = '✕';
+                closeBtn.onclick = (e) => { e.stopPropagation(); cppCloseTab(index); };
+                tabEl.appendChild(closeBtn);
+                tabBar.appendChild(tabEl);
+            });
+            const addBtn = document.createElement('button');
+            addBtn.className = 'tab-add';
+            addBtn.innerHTML = '＋';
+            addBtn.title = 'Thêm tab';
+            addBtn.onclick = () => cppOpenNameTabModal();
+            tabBar.appendChild(addBtn);
+            const actions = document.createElement('div');
+            actions.className = 'tab-actions';
+            actions.innerHTML = '<button class="tab-action-btn" onclick="cppSaveCurrentTab()">Save tab</button><button class="tab-action-btn" onclick="cppOpenLoadTabModal()">Load tab</button>';
+            tabBar.appendChild(actions);
+        }
+
+        function cppSelectTab(index) {
+            cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+            cppCurrentTabIndex = index;
+            cppRenderTabBar();
+            cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+        }
+
+        function cppCloseTab(index) {
+            if (cppTabs.length <= 1) { showToast('Không thể xóa tab cuối cùng!', 'warning'); return; }
+            cppTabs.splice(index, 1);
+            if (cppCurrentTabIndex >= cppTabs.length) cppCurrentTabIndex = cppTabs.length - 1;
+            else if (index < cppCurrentTabIndex) cppCurrentTabIndex--;
+            cppRenderTabBar();
+            cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+        }
+
+        function cppOpenNameTabModal() {
+            document.getElementById('cppNewTabName').value = '';
+            document.getElementById('cppNameTabModal').classList.add('show');
+            setTimeout(() => document.getElementById('cppNewTabName').focus(), 100);
+        }
+
+        function cppConfirmAddTab() {
+            const name = document.getElementById('cppNewTabName').value.trim() || 'New Tab';
+            cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+            cppTabs.push({ id: 'cpp_tab_' + Date.now(), name: name, code: '', output: '' });
+            cppCurrentTabIndex = cppTabs.length - 1;
+            closeModal('cppNameTabModal');
+            cppRenderTabBar();
+            cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+        }
+
+        function cppSaveCurrentTab() {
+            cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+            const saved = JSON.parse(localStorage.getItem(CPP_LS_SAVED_TABS) || '[]');
+            const existingIndex = saved.findIndex(t => t.id === cppTabs[cppCurrentTabIndex].id);
+            if (existingIndex >= 0) saved[existingIndex] = { ...cppTabs[cppCurrentTabIndex] };
+            else saved.push({ ...cppTabs[cppCurrentTabIndex] });
+            localStorage.setItem(CPP_LS_SAVED_TABS, JSON.stringify(saved));
+            showToast('Đã lưu tab "' + cppTabs[cppCurrentTabIndex].name + '"!', 'success');
+        }
+
+        function cppOpenLoadTabModal() {
+            const saved = JSON.parse(localStorage.getItem(CPP_LS_SAVED_TABS) || '[]');
+            const list = document.getElementById('cppSavedTabList');
+            list.innerHTML = '';
+            if (saved.length === 0) {
+                list.innerHTML = '<div class="saved-empty">Chưa có tab nào được lưu.</div>';
+            } else {
+                saved.forEach((tab, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'saved-tab-item';
+                    item.onclick = () => {
+                        cppTabs[cppCurrentTabIndex] = { ...tab };
+                        closeModal('cppLoadTabModal');
+                        cppRenderTabBar();
+                        cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+                    };
+                    item.innerHTML = '<span class="name">' + tab.name + '</span><span class="del" onclick="event.stopPropagation(); cppAskDeleteSaved(' + index + ')">🗑️</span>';
+                    list.appendChild(item);
+                });
+            }
+            document.getElementById('cppLoadTabModal').classList.add('show');
+        }
+
+        let cppDeleteSavedIndex = null;
+        function cppAskDeleteSaved(index) {
+            cppDeleteSavedIndex = index;
+            document.getElementById('cppDeleteSavedBody').innerHTML = 'Bạn có chắc muốn xóa tab đã lưu này không?<br><br>Hành động này <b>không thể hoàn tác</b>.';
+            document.getElementById('cppConfirmDeleteSavedModal').classList.add('show');
+        }
+
+        function cppConfirmDeleteSaved() {
+            const saved = JSON.parse(localStorage.getItem(CPP_LS_SAVED_TABS) || '[]');
+            if (cppDeleteSavedIndex !== null && saved[cppDeleteSavedIndex]) {
+                saved.splice(cppDeleteSavedIndex, 1);
+                localStorage.setItem(CPP_LS_SAVED_TABS, JSON.stringify(saved));
+                cppDeleteSavedIndex = null;
+                closeModal('cppConfirmDeleteSavedModal');
+                cppOpenLoadTabModal();
+            }
+        }
+
+        // ==========================================================
+        // C++ LƯU / TẢI DỮ LIỆU TAB
+        // ==========================================================
+        function cppSaveTabData(tab) {
+            tab.code = document.getElementById('cppCodeEditor').value;
+            tab.output = document.getElementById('cppOutputArea').value;
+        }
+
+        function cppLoadTabData(tab) {
+            document.getElementById('cppCodeEditor').value = tab.code || '';
+            document.getElementById('cppOutputArea').value = tab.output || '';
+            cppRefreshEditorDecorations();
+            cppPersistTabs();
+        }
+
+        // ==========================================================
+        // C++ CONTROLS: SAO CHÉP / XÓA / CHẠY
+        // ==========================================================
+        function cppCopyCode() {
+            const code = document.getElementById('cppCodeEditor').value;
+            if (!code.trim()) { showToast('Không có code để sao chép!', 'warning'); return; }
+            navigator.clipboard.writeText(code).then(() => showToast('Đã sao chép code!', 'success'));
+        }
+
+        function cppConfirmClear() {
+            document.getElementById('cppConfirmClearModal').classList.add('show');
+        }
+
+        function cppDoClear() {
+            document.getElementById('cppCodeEditor').value = '';
+            document.getElementById('cppOutputArea').value = '';
+            closeModal('cppConfirmClearModal');
+            cppRefreshEditorDecorations();
+            cppPersistTabs();
+            showToast('Đã xóa tất cả code.', 'info');
+        }
+
+        // ==========================================================
+        // C++ EXECUTION (JSCPP)
+        // ==========================================================
+        function cppRunCode() {
+            const code = document.getElementById('cppCodeEditor').value;
+            const outputArea = document.getElementById('cppOutputArea');
+
+            if (!code.trim()) { showToast('Viết code trước khi chạy!', 'warning'); return; }
+
+            if (cppViewMode === 'input') cppSetView('output');
+
+            outputArea.value = '⏳ Đang biên dịch và chạy C++...\n';
+
+            try {
+                if (typeof JSCPP === 'undefined') {
+                    throw new Error('Không thể tải JSCPP. Kiểm tra kết nối internet.');
+                }
+
+                let output = '';
+                // Check nếu code cần cin -> hỏi input qua prompt
+                let userInput = '';
+                if (/\bcin\b|scanf|getline|gets/.test(code)) {
+                    userInput = prompt('Chương trình cần nhập dữ liệu (cin/scanf).\nNhập input (mỗi giá trị cách nhau bằng dấu xuống dòng):') || '';
+                }
+
+                // Lọc bỏ std:: vì trình biên dịch JSCPP không parse được toán tử ::
+                const safeCode = code.replace(/std::/g, '');
+
+                const exitCode = JSCPP.run(safeCode, userInput, {
+                    stdio: {
+                        write: function(s) { output += s; }
+                    },
+                    unsigned_overflow: 'warn'
+                });
+
+                outputArea.value = output || '✅ Chạy thành công (không có output).';
+                if (exitCode !== undefined && exitCode !== 0) {
+                    outputArea.value += '\n⚠️ Exit code: ' + exitCode;
+                }
+                showToast('Chạy code C++ thành công!', 'success');
+            } catch (err) {
+                const errMsg = (err && err.message) ? err.message : String(err);
+                outputArea.value = '❌ Lỗi:\n' + errMsg;
+                console.error('C++ error:', err);
+                showToast('Lỗi: ' + errMsg.split('\n')[0], 'warning');
+            }
+            cppPersistTabs();
+        }
+
+        // ==========================================================
+        // C++ SIDEBAR: TẢI / LƯU FILE .CPP
+        // ==========================================================
+        function cppSaveFile() {
+            cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+            const code = cppTabs[cppCurrentTabIndex].code;
+            if (!code.trim()) { showToast('Không có code để lưu!', 'warning'); return; }
+            const blob = new Blob([code], { type: 'text/x-c++src' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (cppTabs[cppCurrentTabIndex].name || 'program') + '.cpp';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Đã lưu file .cpp!', 'success');
+        }
+
+        function cppLoadFile() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.cpp,.cc,.cxx,.c,.h,.hpp';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+                    cppTabs.push({
+                        id: 'cpp_tab_' + Date.now(),
+                        name: file.name.replace(/\.(cpp|cc|cxx|c|h|hpp)$/, ''),
+                        code: ev.target.result,
+                        output: ''
+                    });
+                    cppCurrentTabIndex = cppTabs.length - 1;
+                    cppRenderTabBar();
+                    cppLoadTabData(cppTabs[cppCurrentTabIndex]);
+                    showToast('Đã tải file ' + file.name + '!', 'success');
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
+        }
+
+        // ==========================================================
+        // C++ AI CHAT (GEMINI API)
+        // ==========================================================
+        const CPP_LS_AI_CFG = 'cpp_tools_ai_cfg';
+        const CPP_LS_AI_HISTORY = 'cpp_tools_ai_history';
+        const CPP_LS_AI_MODELS = 'cpp_tools_ai_models';
+        let cppAiCfg = { ...AI_DEFAULTS };
+        let cppAiHistory = [];
+        let cppAiModels = [AI_DEFAULTS.model];
+        let cppPendingFile = null;
+
+        const CPP_AI_SYSTEM_PROMPT = 'Bạn là trợ lý lập trình C++ chuyên nghiệp nhúng trong một IDE web.\n' +
+            '- Giỏi code C++, thuật toán, STL, con trỏ, OOP và các lỗi thường gặp.\n' +
+            '- Giải thích chi tiết, kèm ví dụ code khi cần.\n' +
+            '- Thẳng thắn, đi thẳng vào vấn đề, không vòng vo, không sáo rỗng.\n' +
+            '- Ưu tiên đưa code đúng + giải thích ngắn gọn vì sao.\n' +
+            '- Trả lời bằng ngôn ngữ người dùng đang dùng (mặc định tiếng Việt).';
+
+        function cppLoadAICfg() {
+            try { cppAiCfg = { ...AI_DEFAULTS, ...(JSON.parse(localStorage.getItem(CPP_LS_AI_CFG)) || {}) }; }
+            catch (e) { cppAiCfg = { ...AI_DEFAULTS }; }
+            if (cppAiCfg.model === 'gemini-2.5-flash') cppAiCfg.model = AI_DEFAULTS.model;
+        }
+        function cppSaveAICfg() { localStorage.setItem(CPP_LS_AI_CFG, JSON.stringify(cppAiCfg)); }
+        function cppLoadAIHistory() {
+            try { cppAiHistory = JSON.parse(localStorage.getItem(CPP_LS_AI_HISTORY)) || []; }
+            catch (e) { cppAiHistory = []; }
+        }
+        function cppSaveAIHistory() {
+            try { localStorage.setItem(CPP_LS_AI_HISTORY, JSON.stringify(cppAiHistory.slice(-60))); } catch (e) {}
+        }
+
+        function cppOpenAI() {
+            document.getElementById('cpp-tools').classList.remove('active');
+            document.getElementById('cppAiView').classList.add('active');
+            cppUpdateModelLabel();
+            cppRenderChat();
+            setTimeout(() => document.getElementById('cppChatInput').focus(), 100);
+        }
+
+        function cppCloseAI() {
+            document.getElementById('cppAiView').classList.remove('active');
+            document.getElementById('cpp-tools').classList.add('active');
+            cppCloseMini();
+        }
+
+        function cppUpdateModelLabel() {
+            document.getElementById('cppChatModelLabel').textContent = cppAiCfg.model;
+            const btnLabel = document.getElementById('cppModelBtnLabel');
+            if (btnLabel) btnLabel.textContent = cppAiCfg.model;
+        }
+
+        function cppAddMsg(role, text) {
+            const wrap = document.getElementById('cppChatMessages');
+            const el = document.createElement('div');
+            el.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+            el.dataset.raw = text;
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            body.innerHTML = renderMd(text);
+            el.appendChild(body);
+            if (role !== 'user') {
+                const actions = document.createElement('div');
+                actions.className = 'msg-actions';
+                actions.innerHTML = '<button class="msg-copy" onclick="copyMsg(this)" title="Sao chép tin nhắn">📋</button>';
+                el.appendChild(actions);
+            }
+            wrap.appendChild(el);
+            cppScrollChat();
+            return el;
+        }
+
+        function cppScrollChat() {
+            const w = document.getElementById('cppChatMessages');
+            w.scrollTop = w.scrollHeight;
+        }
+
+        function cppRenderChat() {
+            const w = document.getElementById('cppChatMessages');
+            w.innerHTML = '';
+            if (!cppAiHistory.length) {
+                cppAddMsg('ai', '👋 Chào bạn! Mình là trợ lý **C++** — giỏi code, STL, OOP, con trỏ, giải thích chi tiết, thẳng thắn không vòng vo.\n\nLệnh: `/help` • `/setkey <api-key>` • `/setmodel <model-id>` • `/model`');
+            } else {
+                cppAiHistory.forEach(m => cppAddMsg(m.role, m.display || m.text));
+            }
+            cppScrollChat();
+        }
+
+        function cppHandleChatCommand(cmd) {
+            const sp = cmd.split(/\s+/);
+            const c = sp[0].toLowerCase();
+            const arg = sp.slice(1).join(' ').trim();
+            if (c === '/setkey') {
+                if (!arg) { cppAddMsg('ai', 'Cách dùng: `/setkey <api-key>`'); return; }
+                cppAiCfg.apiKey = arg; cppSaveAICfg();
+                cppAddMsg('ai', '✅ Đã lưu API key mới.');
+            } else if (c === '/setmodel') {
+                if (!arg) { cppAddMsg('ai', 'Cách dùng: `/setmodel <model-id>`\nVí dụ: `/setmodel gemini-2.5-flash`'); return; }
+                cppAiCfg.model = arg; cppSaveAICfg(); cppUpdateModelLabel();
+                cppAddMsg('ai', '✅ Đã chuyển model sang: `' + arg + '`');
+            } else if (c === '/model') {
+                cppAddMsg('ai', '**Model hiện tại:** `' + cppAiCfg.model + '`\n**API key:** `' + cppAiCfg.apiKey + '`');
+            } else if (c === '/help') {
+                cppAddMsg('ai',
+                    '**📖 Hướng dẫn sử dụng lệnh**\n\n' +
+                    '`/help` — Hiện bảng hướng dẫn này\n' +
+                    '`/setkey <api-key>` — Đặt API key mới\n' +
+                    '`/setmodel <model-id>` — Đổi model theo id\n' +
+                    '`/model` — Show model và API key hiện tại\n\n' +
+                    '💡 **Mẹo:**\n' +
+                    '- Gõ `/` sẽ hiện **gợi ý cú pháp**, bấm vào gợi ý (hoặc phím Tab) để điền nhanh\n' +
+                    '- Nút **＋** cạnh ô chat: gửi file .cpp cho bot đọc\n' +
+                    '- Nút **model:** : thêm model mới và chọn model đang dùng');
+            } else {
+                cppAddMsg('ai', 'Không biết lệnh `' + c + '`.\nGõ `/help` để xem bảng lệnh.');
+            }
+        }
+
+        function cppSendChat() {
+            const input = document.getElementById('cppChatInput');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            cppRenderHints();
+            if (text.startsWith('/')) { cppHandleChatCommand(text); return; }
+            if (cppPendingFile) {
+                const fileName = cppPendingFile.name;
+                const lines = cppPendingFile.content.split('\n').length;
+                const display = text + '\n📎 *Đã gửi file `' + fileName + '` (' + lines + ' dòng)*';
+                const payload = 'Người dùng đính kèm file: ' + fileName + '\n```cpp\n' + cppPendingFile.content + '\n```\nYêu cầu với file trên: ' + text;
+                cppClearAttachment();
+                cppAddMsg('user', display);
+                cppAiHistory.push({ role: 'user', text: payload, display: display });
+            } else {
+                cppAddMsg('user', text);
+                cppAiHistory.push({ role: 'user', text: text });
+            }
+            cppSaveAIHistory();
+            cppCallGemini();
+        }
+
+        async function cppCallGemini() {
+            const msgEl = cppAddMsg('ai', 'Đang suy nghĩ...');
+            const bodyEl = msgEl.querySelector('.msg-body');
+            try {
+                const res = await fetch(
+                    'https://generativelanguage.googleapis.com/v1beta/models/' +
+                    encodeURIComponent(cppAiCfg.model) + ':streamGenerateContent?alt=sse&key=' +
+                    encodeURIComponent(cppAiCfg.apiKey),
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            systemInstruction: { parts: [{ text: CPP_AI_SYSTEM_PROMPT }] },
+                            contents: cppAiHistory.slice(-20).map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+                            generationConfig: { temperature: 0.6 }
+                        })
+                    }
+                );
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error('HTTP ' + res.status + ' — ' + errText.slice(0, 400));
+                }
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buf = '', full = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += decoder.decode(value, { stream: true });
+                    const lines = buf.split('\n');
+                    buf = lines.pop();
+                    for (const line of lines) {
+                        const t = line.trim();
+                        if (!t.startsWith('data:')) continue;
+                        const payload = t.slice(5).trim();
+                        if (!payload || payload === '[DONE]') continue;
+                        try {
+                            const j = JSON.parse(payload);
+                            const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+                            for (const p of parts) if (p.text && !p.thought) full += p.text;
+                        } catch (e) {}
+                    }
+                    bodyEl.innerHTML = renderMd(full);
+                    cppScrollChat();
+                }
+                if (!full.trim()) full = '(AI không trả về nội dung)';
+                bodyEl.innerHTML = renderMd(full);
+                msgEl.dataset.raw = full;
+                cppAiHistory.push({ role: 'model', text: full });
+                cppSaveAIHistory();
+            } catch (err) {
+                const errFull = '❌ Lỗi gọi API: ' + String(err.message || err);
+                bodyEl.innerHTML = '<span class="chat-error">' + escHtml(errFull) + '</span>';
+                msgEl.dataset.raw = errFull;
+            }
+            cppScrollChat();
+        }
+
+        // ==========================================================
+        // C++ GỢI Ý LỆNH + GỬI FILE + MENU MODEL
+        // ==========================================================
+        const CPP_AI_COMMANDS = [
+            { cmd: '/help', syn: '/help', desc: 'Hiện bảng hướng dẫn sử dụng lệnh' },
+            { cmd: '/setkey', syn: '/setkey <api-key>', desc: 'Set API key' },
+            { cmd: '/setmodel', syn: '/setmodel <model-id>', desc: 'Set model theo id' },
+            { cmd: '/model', syn: '/model', desc: 'Show model và api key hiện tại' }
+        ];
+
+        function cppLoadAIModels() {
+            try {
+                const m = JSON.parse(localStorage.getItem(CPP_LS_AI_MODELS));
+                if (Array.isArray(m) && m.length) {
+                    cppAiModels = m;
+                    if (!cppAiModels.includes(AI_DEFAULTS.model)) cppAiModels.unshift(AI_DEFAULTS.model);
+                }
+            } catch (e) {}
+        }
+        function cppSaveAIModels() { localStorage.setItem(CPP_LS_AI_MODELS, JSON.stringify(cppAiModels)); }
+
+        function cppCurrentHintMatches() {
+            const v = document.getElementById('cppChatInput').value.trim().toLowerCase();
+            if (!v.startsWith('/')) return [];
+            return CPP_AI_COMMANDS.filter(c => c.cmd.startsWith(v) || c.syn.toLowerCase().startsWith(v));
+        }
+
+        function cppRenderHints() {
+            const box = document.getElementById('cppChatHints');
+            const matches = cppCurrentHintMatches();
+            if (!matches.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.innerHTML = matches.map((m, i) =>
+                '<div class="chat-hint-item' + (i === 0 ? ' sel' : '') + '" onclick="cppApplyHint(\'' + m.cmd + '\')">' +
+                '<span class="cmd">' + m.cmd + '</span>' +
+                '<span class="syn">' + m.syn + '</span>' +
+                '<span class="desc">' + m.desc + '</span>' +
+                '</div>'
+            ).join('');
+            box.style.display = 'block';
+        }
+
+        function cppApplyHint(cmd) {
+            const input = document.getElementById('cppChatInput');
+            input.value = cmd + ' ';
+            cppRenderHints();
+            input.focus();
+        }
+
+        function cppPickFile() {
+            const inp = document.createElement('input');
+            inp.type = 'file';
+            inp.accept = '.cpp,.cc,.cxx,.c,.h,.hpp';
+            inp.onchange = (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    cppPendingFile = { name: f.name, content: ev.target.result };
+                    document.getElementById('cppAttachName').textContent = f.name + ' (' + cppPendingFile.content.split('\n').length + ' dòng)';
+                    document.getElementById('cppAttachRow').style.display = 'flex';
+                    showToast('Đã đính kèm ' + f.name + '. Gõ yêu cầu rồi bấm Gửi!', 'info');
+                };
+                reader.readAsText(f);
+            };
+            inp.click();
+        }
+
+        function cppClearAttachment() {
+            cppPendingFile = null;
+            document.getElementById('cppAttachRow').style.display = 'none';
+        }
+
+        function cppToggleModelMenu() {
+            const m = document.getElementById('cppModelMenu');
+            m.classList.toggle('show');
+            if (m.classList.contains('show')) cppRenderModelList();
+        }
+
+        function cppHideModelMenu() {
+            document.getElementById('cppModelMenu').classList.remove('show');
+        }
+
+        function cppRenderModelList() {
+            const list = document.getElementById('cppModelList');
+            list.innerHTML = '';
+            cppAiModels.forEach(id => {
+                const it = document.createElement('div');
+                it.className = 'model-item' + (id === cppAiCfg.model ? ' active' : '');
+                const name = document.createElement('span');
+                name.textContent = id === cppAiCfg.model ? '✓ ' + id : id;
+                it.appendChild(name);
+                it.onclick = () => {
+                    cppAiCfg.model = id;
+                    cppSaveAICfg();
+                    cppUpdateModelLabel();
+                    cppRenderModelList();
+                    showToast('Đã chọn model: ' + id, 'success');
+                };
+                list.appendChild(it);
+            });
+        }
+
+        function cppAddModel() {
+            const inp = document.getElementById('cppNewModelInput');
+            const id = inp.value.trim();
+            if (!id) { showToast('Nhập model-id trước!', 'warning'); return; }
+            if (!cppAiModels.includes(id)) { cppAiModels.push(id); cppSaveAIModels(); }
+            cppAiCfg.model = id;
+            cppSaveAICfg();
+            cppUpdateModelLabel();
+            inp.value = '';
+            cppRenderModelList();
+            showToast('Đã thêm và chọn model: ' + id, 'success');
+        }
+
+        // ==========================================================
+        // C++ LOAD/SAVE TAB + CỬA SỔ MINI
+        // ==========================================================
+        let cppMiniTabId = null;
+
+        function cppAiSaveTab() {
+            cppSaveTabData(cppTabs[cppCurrentTabIndex]);
+            const saved = JSON.parse(localStorage.getItem(CPP_LS_SAVED_TABS) || '[]');
+            const i = saved.findIndex(t => t.id === cppTabs[cppCurrentTabIndex].id);
+            if (i >= 0) saved[i] = { ...cppTabs[cppCurrentTabIndex] };
+            else saved.push({ ...cppTabs[cppCurrentTabIndex] });
+            localStorage.setItem(CPP_LS_SAVED_TABS, JSON.stringify(saved));
+            showToast('Đã lưu tab "' + cppTabs[cppCurrentTabIndex].name + '"!', 'success');
+        }
+
+        function cppAiLoadTab() {
+            const saved = JSON.parse(localStorage.getItem(CPP_LS_SAVED_TABS) || '[]');
+            const list = document.getElementById('cppAiSavedList');
+            list.innerHTML = '';
+            if (!saved.length) {
+                list.innerHTML = '<div class="saved-empty">Chưa có tab nào được lưu.</div>';
+            } else {
+                saved.forEach(tab => {
+                    const item = document.createElement('div');
+                    item.className = 'saved-tab-item';
+                    const name = document.createElement('span');
+                    name.className = 'name';
+                    name.textContent = tab.name;
+                    item.appendChild(name);
+                    item.onclick = () => { closeModal('cppAiLoadModal'); cppOpenMini(tab); };
+                    list.appendChild(item);
+                });
+            }
+            document.getElementById('cppAiLoadModal').classList.add('show');
+        }
+
+        function cppOpenMini(tab) {
+            cppMiniTabId = tab.id;
+            document.getElementById('cppMiniName').textContent = tab.name;
+            document.getElementById('cppMiniCode').value = tab.code || '';
+            document.getElementById('cppMiniOut').value = tab.output || '';
+            const w = document.getElementById('cppMiniWin');
+            if (!w.classList.contains('show')) {
+                w.classList.add('show');
+                w.style.left = Math.max(70, Math.round((window.innerWidth - 460) / 2)) + 'px';
+                w.style.top = '100px';
+            }
+        }
+
+        function cppCloseMini() { document.getElementById('cppMiniWin').classList.remove('show'); }
+
+        function cppMiniRun() {
+            const code = document.getElementById('cppMiniCode').value;
+            const out = document.getElementById('cppMiniOut');
+            if (!code.trim()) { out.value = 'Không có code để chạy!'; return; }
+            out.value = '⏳ Đang chạy...';
+            try {
+                if (typeof JSCPP === 'undefined') throw new Error('JSCPP chưa tải.');
+                let output = '';
+                let userInput = '';
+                if (/\bcin\b|scanf|getline|gets/.test(code)) {
+                    userInput = prompt('Nhập input (cin/scanf):') || '';
+                }
+                const safeCode = code.replace(/std::/g, '');
+                JSCPP.run(safeCode, userInput, {
+                    stdio: { write: function(s) { output += s; } },
+                    unsigned_overflow: 'warn'
+                });
+                out.value = output || '✅ Chạy thành công (không có output).';
+            } catch (err) {
+                out.value = '❌ Lỗi:\n' + (err.message || err);
+            }
+        }
+
+        function cppMiniCopy() {
+            const code = document.getElementById('cppMiniCode').value;
+            if (!code.trim()) { showToast('Không có code để sao chép!', 'warning'); return; }
+            navigator.clipboard.writeText(code).then(() => showToast('Đã sao chép code!', 'success'));
+        }
+
+        function cppMiniClear() {
+            document.getElementById('cppMiniCode').value = '';
+            document.getElementById('cppMiniOut').value = '';
+        }
+
+        function cppMiniSave() {
+            const saved = JSON.parse(localStorage.getItem(CPP_LS_SAVED_TABS) || '[]');
+            const data = {
+                id: cppMiniTabId,
+                name: document.getElementById('cppMiniName').textContent,
+                code: document.getElementById('cppMiniCode').value,
+                output: document.getElementById('cppMiniOut').value
+            };
+            const i = saved.findIndex(t => t.id === cppMiniTabId);
+            if (i >= 0) saved[i] = data; else saved.push(data);
+            localStorage.setItem(CPP_LS_SAVED_TABS, JSON.stringify(saved));
+            showToast('Đã lưu thay đổi!', 'success');
+        }
+
+        function cppInitMiniDrag() {
+            const win = document.getElementById('cppMiniWin');
+            const title = win.querySelector('.mini-title');
+            let dragging = false, ox = 0, oy = 0;
+            title.addEventListener('mousedown', e => {
+                if (e.target.classList.contains('mini-x')) return;
+                dragging = true;
+                const r = win.getBoundingClientRect();
+                ox = e.clientX - r.left;
+                oy = e.clientY - r.top;
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                win.style.left = Math.max(0, e.clientX - ox) + 'px';
+                win.style.top = Math.max(0, e.clientY - oy) + 'px';
+            });
+            document.addEventListener('mouseup', () => dragging = false);
+        }
+    </script>
+
+</body>
+</html>
