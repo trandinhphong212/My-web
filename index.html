@@ -1221,6 +1221,71 @@
         }
 
         /* ==========================================================
+           MINI WIN: NÚT THU GỌN (−)
+           ========================================================== */
+        .mini-btns { display: flex; gap: 0.15rem; align-items: center; }
+        .mini-min {
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0 0.45rem;
+            border-radius: 3px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .mini-min:hover { background: var(--btn-hover); color: var(--text-primary); }
+        .mini-win.collapsed { height: auto !important; resize: none; }
+        .mini-win.collapsed .mini-body,
+        .mini-win.collapsed .mini-controls { display: none; }
+        .mini-win.collapsed .mini-title { border-bottom: none; }
+
+        /* ==========================================================
+           DỊCH ẢNH (CASIO IMAGE TOOLS)
+           ========================================================== */
+        .img-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.6rem; }
+        .img-controls { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-bottom: 0.6rem; }
+        .num-input {
+            width: 72px;
+            padding: 0.35rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            background: var(--bg-editor);
+            color: var(--text-primary);
+            outline: none;
+        }
+        .num-input:focus { border-color: var(--accent); }
+        .pix-canvas {
+            image-rendering: pixelated;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: crosshair;
+            display: block;
+            max-width: 100%;
+            touch-action: none;
+        }
+        .hex-area {
+            width: 100%;
+            min-height: 130px;
+            margin-top: 0.2rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--divider);
+            border-radius: 6px;
+            background: var(--bg-output);
+            color: var(--text-primary);
+            resize: vertical;
+            outline: none;
+            white-space: pre;
+        }
+        .hex-area:focus { border-color: var(--accent); }
+        .img-note { font-size: 0.72rem; color: var(--text-muted); margin: 0.3rem 0 0.5rem; }
+        .img-section { margin-bottom: 0.7rem; }
+
+        /* ==========================================================
            RESPONSIVE
            ========================================================== */
         /* Chế độ view cho Controls của Casio */
@@ -1476,7 +1541,10 @@
         <div class="mini-win" id="miniWin">
             <div class="mini-title">
                 <span id="miniName">tab</span>
-                <span class="mini-x" onclick="closeMini()">✕</span>
+                <span class="mini-btns">
+                    <span class="mini-min" onclick="toggleMiniCollapse(this)" title="Ẩn bàn làm việc">−</span>
+                    <span class="mini-x" onclick="closeMini()">✕</span>
+                </span>
             </div>
             <div class="mini-body">
                 <textarea id="miniCode" placeholder="# Code Python..." spellcheck="false"></textarea>
@@ -1615,7 +1683,10 @@
         <div class="mini-win" id="cppMiniWin">
             <div class="mini-title">
                 <span id="cppMiniName">tab</span>
-                <span class="mini-x" onclick="cppCloseMini()">✕</span>
+                <span class="mini-btns">
+                    <span class="mini-min" onclick="toggleMiniCollapse(this)" title="Ẩn bàn làm việc">−</span>
+                    <span class="mini-x" onclick="cppCloseMini()">✕</span>
+                </span>
             </div>
             <div class="mini-body">
                 <textarea id="cppMiniCode" placeholder="// Code C++..." spellcheck="false"></textarea>
@@ -1651,6 +1722,9 @@
                 </button>
                 <button class="tool-btn" onclick="openSettings()" data-tip="Cài đặt">
                     <i class="fa-solid fa-gear"></i><span class="tool-label">Cài đặt</span>
+                </button>
+                <button class="tool-btn" onclick="openImgView()" data-tip="Dịch ảnh">
+                    <i class="fa-solid fa-image"></i><span class="tool-label">Dịch ảnh</span>
                 </button>
                 <button class="tool-btn ai" onclick="casioOpenAI()" data-tip="AI">
                     <i class="fa-solid fa-robot"></i><span class="tool-label">AI</span>
@@ -1762,7 +1836,10 @@
         <div class="mini-win" id="casioMiniWin">
             <div class="mini-title">
                 <span id="casioMiniName">tab</span>
-                <span class="mini-x" onclick="casioCloseMini()">✕</span>
+                <span class="mini-btns">
+                    <span class="mini-min" onclick="toggleMiniCollapse(this)" title="Ẩn bàn làm việc">−</span>
+                    <span class="mini-x" onclick="casioCloseMini()">✕</span>
+                </span>
             </div>
             <div class="mini-body">
                 <textarea id="casioMiniCode" placeholder="# Code Assembly (Casio fx-580VNX)..." spellcheck="false"></textarea>
@@ -1775,6 +1852,84 @@
                 <button class="control-btn studio" onclick="casioMiniSave()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
             </div>
         </div>
+    </div>
+
+    <!-- ==========================================================
+         DỊCH ẢNH (CASIO IMAGE TOOLS)
+         ========================================================== -->
+    <div id="imgView" class="ai-view">
+        <aside class="sidebar">
+            <div class="sidebar-title">🖼️</div>
+            <nav class="sidebar-nav">
+                <button class="tool-btn" onclick="closeImgView()" data-tip="Thoát">
+                    <i class="fa-solid fa-door-open"></i>
+                </button>
+            </nav>
+            <div class="sidebar-footer">IMG</div>
+        </aside>
+        <main class="main-content">
+            <div class="tab-bar" id="imgTabBar">
+                <div class="tab active" onclick="switchImgTab(0)">📷 Dịch ảnh</div>
+                <div class="tab" onclick="switchImgTab(1)">🎨 Pixel editor</div>
+                <div class="tab" onclick="switchImgTab(2)">🧩 Bitmap editor</div>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding: 1rem 1.2rem;">
+
+                <!-- MỤC 1: DỊCH ẢNH 192x63 -->
+                <div id="imgPanel0">
+                    <div class="img-title">📷 Dịch ảnh 192x63</div>
+                    <label class="control-btn" style="cursor:pointer; margin-bottom: 0.6rem; display:inline-flex;">
+                        <i class="fa-solid fa-file-arrow-up"></i> Đưa tệp ảnh vào
+                        <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="imgLoadFile(event)">
+                    </label>
+                    <div class="img-section">
+                        <div class="img-note">Ảnh mẫu (pixel đen/trắng) — bấm vào ảnh để bật/tắt pixel:</div>
+                        <canvas id="imgMauCanvas" width="192" height="63" class="pix-canvas" style="width: 576px;"></canvas>
+                        <div class="img-note" id="imgMauInfo">Chưa có ảnh — chọn tệp ảnh để dịch.</div>
+                    </div>
+                    <div class="img-note">Hex đã dịch (8 pixel ngang = 1 byte, MSB trước):</div>
+                    <textarea id="imgHex1" class="hex-area" readonly placeholder="Hex đã dịch sẽ hiện ở đây..."></textarea>
+                </div>
+
+                <!-- MỤC 2: PIXEL EDITOR -->
+                <div id="imgPanel1" style="display:none">
+                    <div class="img-title">🎨 Pixel editor</div>
+                    <div class="img-controls">
+                        <button id="peDrawBtn" class="control-btn view-btn active" onclick="peSetMode('draw')">✏️ Vẽ</button>
+                        <button id="peEraseBtn" class="control-btn view-btn" onclick="peSetMode('erase')">🧽 Tẩy</button>
+                        <button class="control-btn clear" onclick="peClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
+                        <button class="control-btn" onclick="peUndo()"><i class="fa-solid fa-rotate-left"></i> Hoàn tác</button>
+                        <button class="control-btn run" onclick="peCreate()">Tạo</button>
+                        <input type="number" id="peW" class="num-input" value="32" min="1" max="192" title="Rộng">
+                        <span>x</span>
+                        <input type="number" id="peH" class="num-input" value="16" min="1" max="63" title="Cao">
+                        <button class="control-btn studio" onclick="peTranslate()">Dịch ảnh theo kích cỡ</button>
+                    </div>
+                    <canvas id="peCanvas" width="32" height="16" class="pix-canvas" style="width: 512px;"></canvas>
+                    <div class="img-note" id="peInfo">32x16 — vẽ vào bàn rồi bấm "Dịch ảnh theo kích cỡ"</div>
+                    <textarea id="peHex" class="hex-area" readonly placeholder="Hex sẽ hiện ở đây sau khi dịch..."></textarea>
+                </div>
+
+                <!-- MỤC 3: BITMAP EDITOR -->
+                <div id="imgPanel2" style="display:none">
+                    <div class="img-title">🧩 Bitmap editor</div>
+                    <div class="img-controls">
+                        <button id="beDrawBtn" class="control-btn view-btn active" onclick="beSetMode('draw')">✏️ Vẽ</button>
+                        <button id="beEraseBtn" class="control-btn view-btn" onclick="beSetMode('erase')">🧽 Tẩy</button>
+                        <button class="control-btn clear" onclick="beClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
+                        <button class="control-btn" onclick="beUndo()"><i class="fa-solid fa-rotate-left"></i> Hoàn tác</button>
+                        <button class="control-btn run" onclick="beCreate()">Tạo</button>
+                        <input type="number" id="beW" class="num-input" value="32" min="1" max="192" title="Rộng">
+                        <span>x</span>
+                        <input type="number" id="beH" class="num-input" value="16" min="1" max="63" title="Cao">
+                    </div>
+                    <canvas id="beCanvas" width="32" height="16" class="pix-canvas" style="width: 512px;"></canvas>
+                    <div class="img-note" id="beInfo">32x16 — vẽ là hex tự cập nhật</div>
+                    <textarea id="beHex" class="hex-area" readonly placeholder="Hex tự cập nhật khi vẽ..."></textarea>
+                </div>
+
+            </div>
+        </main>
     </div>
 
     <!-- ==========================================================
@@ -3125,6 +3280,11 @@
 
         function closeMini() { document.getElementById('miniWin').classList.remove('show'); }
 
+        // Thu gọn/mở lại bàn làm việc mini (chừa lại thanh tiêu đề)
+        function toggleMiniCollapse(btn) {
+            btn.closest('.mini-win').classList.toggle('collapsed');
+        }
+
         async function miniRun() {
             const code = document.getElementById('miniCode').value;
             const out = document.getElementById('miniOut');
@@ -3172,7 +3332,7 @@
             const title = win.querySelector('.mini-title');
             let dragging = false, ox = 0, oy = 0;
             title.addEventListener('pointerdown', e => {
-                if (e.target.classList.contains('mini-x')) return;
+                if (e.target.classList.contains('mini-x') || e.target.classList.contains('mini-min')) return;
                 dragging = true;
                 const r = win.getBoundingClientRect();
                 ox = e.clientX - r.left;
@@ -3193,6 +3353,230 @@
         function closeModal(id) {
             document.getElementById(id).classList.remove('show');
         }
+
+        // ==========================================================
+        // DỊCH ẢNH (CASIO): ẢNH -> HEX + PIXEL/BITMAP EDITOR
+        // ==========================================================
+        // Đóng gói 8 pixel ngang thành 1 byte (MSB trước), pixel đen = 1
+        function gridToHexLines(grid, w, h) {
+            const bytesPerRow = Math.ceil(w / 8);
+            const lines = [];
+            let total = 0;
+            for (let y = 0; y < h; y++) {
+                const row = [];
+                for (let bx = 0; bx < bytesPerRow; bx++) {
+                    let b = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const x = bx * 8 + bit;
+                        if (x < w && grid[y * w + x]) b |= (0x80 >> bit);
+                    }
+                    row.push('0x' + b.toString(16).toUpperCase().padStart(2, '0'));
+                }
+                total += row.length;
+                lines.push(row.join(','));
+            }
+            return { text: lines.join('\n'), bytes: total };
+        }
+
+        function renderPixCanvas(canvas, grid, w, h) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#000000';
+            for (let y = 0; y < h; y++)
+                for (let x = 0; x < w; x++)
+                    if (grid[y * w + x]) ctx.fillRect(x, y, 1, 1);
+        }
+
+        function canvasPixelFromEvent(canvas, e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) * canvas.width / rect.width);
+            const y = Math.floor((e.clientY - rect.top) * canvas.height / rect.height);
+            if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return null;
+            return { x, y };
+        }
+
+        function openImgView() {
+            document.getElementById('casio-tools').classList.remove('active');
+            document.getElementById('imgView').classList.add('active');
+            switchImgTab(0);
+        }
+
+        function closeImgView() {
+            document.getElementById('imgView').classList.remove('active');
+            document.getElementById('casio-tools').classList.add('active');
+        }
+
+        function switchImgTab(i) {
+            for (let k = 0; k < 3; k++) {
+                document.getElementById('imgPanel' + k).style.display = (k === i) ? 'block' : 'none';
+            }
+            document.querySelectorAll('#imgTabBar .tab').forEach((t, k) => t.classList.toggle('active', k === i));
+        }
+
+        // ---------- MỤC 1: DỊCH ẢNH 192x63 ----------
+        const IMG_W = 192, IMG_H = 63;
+        let imgGrid = new Uint8Array(IMG_W * IMG_H);
+        let imgHasHex = false;
+
+        function imgLoadFile(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Vẽ ảnh vào canvas 192x63 (canvas API) rồi lấy từng pixel
+                    const off = document.createElement('canvas');
+                    off.width = IMG_W;
+                    off.height = IMG_H;
+                    const octx = off.getContext('2d');
+                    octx.fillStyle = '#fff';
+                    octx.fillRect(0, 0, IMG_W, IMG_H);
+                    octx.drawImage(img, 0, 0, IMG_W, IMG_H);
+                    const data = octx.getImageData(0, 0, IMG_W, IMG_H).data;
+                    for (let i = 0, p = 0; p < imgGrid.length; i += 4, p++) {
+                        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        imgGrid[p] = gray < 128 ? 1 : 0;
+                    }
+                    renderPixCanvas(document.getElementById('imgMauCanvas'), imgGrid, IMG_W, IMG_H);
+                    document.getElementById('imgMauInfo').textContent = '192x63 — đã dịch xong, bấm vào ảnh để bật/tắt pixel';
+                    imgRunHex();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            ev.target.value = '';
+        }
+
+        function imgRunHex() {
+            const r = gridToHexLines(imgGrid, IMG_W, IMG_H);
+            document.getElementById('imgHex1').value = r.text;
+            document.getElementById('imgMauInfo').textContent = '192x63 — ' + r.bytes + ' bytes — bấm vào ảnh để bật/tắt pixel, hex tự cập nhật';
+            imgHasHex = true;
+        }
+
+        // Tương tác ảnh mẫu: bấm/kéo để bật tắt pixel, hex tự cập nhật
+        (function () {
+            const cv = document.getElementById('imgMauCanvas');
+            let painting = false;
+            function apply(e) {
+                const p = canvasPixelFromEvent(cv, e);
+                if (!p) return;
+                imgGrid[p.y * IMG_W + p.x] ^= 1;
+                renderPixCanvas(cv, imgGrid, IMG_W, IMG_H);
+                if (imgHasHex) imgRunHex();
+            }
+            cv.addEventListener('pointerdown', e => {
+                painting = true;
+                try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+                apply(e);
+            });
+            cv.addEventListener('pointermove', e => { if (painting) apply(e); });
+            document.addEventListener('pointerup', () => painting = false);
+        })();
+
+        // ---------- MỤC 2 + 3: PIXEL / BITMAP EDITOR ----------
+        function createPixEditor(prefix, opts) {
+            const st = {
+                w: opts.w, h: opts.h,
+                grid: new Uint8Array(opts.w * opts.h),
+                undo: [],
+                mode: 'draw',
+                auto: opts.auto
+            };
+            const cv = document.getElementById(prefix + 'Canvas');
+            const hexTa = document.getElementById(prefix + 'Hex');
+            const info = document.getElementById(prefix + 'Info');
+
+            function render() { renderPixCanvas(cv, st.grid, st.w, st.h); }
+            function hex() {
+                const r = gridToHexLines(st.grid, st.w, st.h);
+                hexTa.value = r.text;
+                info.textContent = st.w + 'x' + st.h + ' — ' + r.bytes + ' bytes';
+            }
+            function refresh() {
+                render();
+                if (st.auto) hex();
+            }
+
+            function setPixel(x, y, val) {
+                const i = y * st.w + x;
+                if (st.grid[i] === val) return;
+                st.undo.push({ i, prev: st.grid[i] });
+                if (st.undo.length > 5000) st.undo.shift();
+                st.grid[i] = val;
+                refresh();
+            }
+
+            let painting = false;
+            cv.addEventListener('pointerdown', e => {
+                painting = true;
+                try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+                const p = canvasPixelFromEvent(cv, e);
+                if (p) setPixel(p.x, p.y, st.mode === 'draw' ? 1 : 0);
+            });
+            cv.addEventListener('pointermove', e => {
+                if (!painting) return;
+                const p = canvasPixelFromEvent(cv, e);
+                if (p) setPixel(p.x, p.y, st.mode === 'draw' ? 1 : 0);
+            });
+            document.addEventListener('pointerup', () => painting = false);
+
+            return {
+                setMode(m) {
+                    st.mode = m;
+                    document.getElementById(prefix + 'DrawBtn').classList.toggle('active', m === 'draw');
+                    document.getElementById(prefix + 'EraseBtn').classList.toggle('active', m === 'erase');
+                },
+                clear() {
+                    st.grid.fill(0);
+                    st.undo = [];
+                    render();
+                    hexTa.value = '';
+                    info.textContent = st.w + 'x' + st.h + ' — đã xóa hết pixel và hex';
+                },
+                undo() {
+                    const last = st.undo.pop();
+                    if (!last) { showToast('Không có gì để hoàn tác!', 'warning'); return; }
+                    st.grid[last.i] = last.prev;
+                    refresh();
+                },
+                create() {
+                    const w = Math.max(1, Math.min(192, parseInt(document.getElementById(prefix + 'W').value) || 8));
+                    const h = Math.max(1, Math.min(63, parseInt(document.getElementById(prefix + 'H').value) || 8));
+                    st.w = w;
+                    st.h = h;
+                    st.grid = new Uint8Array(w * h);
+                    st.undo = [];
+                    cv.width = w;
+                    cv.height = h;
+                    render();
+                    hexTa.value = '';
+                    info.textContent = w + 'x' + h + ' — bàn vẽ mới';
+                    showToast('Đã tạo bàn vẽ mới ' + w + 'x' + h + '!', 'success');
+                },
+                translate() {
+                    hex();
+                    render();
+                    showToast('Đã dịch ảnh theo kích cỡ ' + st.w + 'x' + st.h + '!', 'success');
+                }
+            };
+        }
+
+        const peEditor = createPixEditor('pe', { w: 32, h: 16, auto: false });
+        const beEditor = createPixEditor('be', { w: 32, h: 16, auto: true });
+
+        function peSetMode(m) { peEditor.setMode(m); }
+        function peClear() { peEditor.clear(); }
+        function peUndo() { peEditor.undo(); }
+        function peCreate() { peEditor.create(); }
+        function peTranslate() { peEditor.translate(); }
+
+        function beSetMode(m) { beEditor.setMode(m); }
+        function beClear() { beEditor.clear(); }
+        function beUndo() { beEditor.undo(); }
+        function beCreate() { beEditor.create(); }
 
         // ==========================================================
         // KHỞI TẠO
@@ -4229,7 +4613,7 @@
             const title = win.querySelector('.mini-title');
             let dragging = false, ox = 0, oy = 0;
             title.addEventListener('pointerdown', e => {
-                if (e.target.classList.contains('mini-x')) return;
+                if (e.target.classList.contains('mini-x') || e.target.classList.contains('mini-min')) return;
                 dragging = true;
                 const r = win.getBoundingClientRect();
                 ox = e.clientX - r.left;
@@ -5616,7 +6000,7 @@
             const title = win.querySelector('.mini-title');
             let dragging = false, ox = 0, oy = 0;
             title.addEventListener('pointerdown', e => {
-                if (e.target.classList.contains('mini-x')) return;
+                if (e.target.classList.contains('mini-x') || e.target.classList.contains('mini-min')) return;
                 dragging = true;
                 const r = win.getBoundingClientRect();
                 ox = e.clientX - r.left;
