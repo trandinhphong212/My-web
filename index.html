@@ -1255,15 +1255,24 @@
             outline: none;
         }
         .num-input:focus { border-color: var(--accent); }
+        .zoom-slider { width: 130px; accent-color: var(--accent); vertical-align: middle; }
         .pix-canvas {
             image-rendering: pixelated;
             background: #fff;
             border: 1px solid var(--border);
-            border-radius: 4px;
-            cursor: crosshair;
             display: block;
-            max-width: 100%;
             touch-action: none;
+        }
+        .canvas-scroll { overflow: auto; max-width: 100%; margin-bottom: 0.3rem; }
+        .canvas-wrap { position: relative; display: inline-block; line-height: 0; }
+        /* Viền từng pixel rõ ràng */
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, rgba(0,0,0,0.18) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.18) 1px, transparent 1px);
         }
         .hex-area {
             width: 100%;
@@ -1884,7 +1893,12 @@
                     </label>
                     <div class="img-section">
                         <div class="img-note">Ảnh mẫu (pixel đen/trắng) — bấm vào ảnh để bật/tắt pixel:</div>
-                        <canvas id="imgMauCanvas" width="192" height="63" class="pix-canvas" style="width: 576px;"></canvas>
+                        <div class="canvas-scroll">
+                            <div class="canvas-wrap">
+                                <canvas id="imgMauCanvas" width="192" height="63" class="pix-canvas"></canvas>
+                                <div class="grid-overlay" id="imgMauGrid"></div>
+                            </div>
+                        </div>
                         <div class="img-note" id="imgMauInfo">Chưa có ảnh — chọn tệp ảnh để dịch.</div>
                     </div>
                     <div class="img-note">Hex đã dịch (8 pixel ngang = 1 byte, MSB trước):</div>
@@ -1900,13 +1914,24 @@
                         <button class="control-btn clear" onclick="peClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
                         <button class="control-btn" onclick="peUndo()"><i class="fa-solid fa-rotate-left"></i> Hoàn tác</button>
                         <button class="control-btn run" onclick="peCreate()">Tạo</button>
+                        <label class="control-btn" style="cursor:pointer; display:inline-flex;">
+                            <i class="fa-solid fa-file-arrow-up"></i> Đưa ảnh vào
+                            <input type="file" id="peImgInput" accept="image/*" style="display:none" onchange="peLoadImage(event)">
+                        </label>
+                        <span>Zoom</span>
+                        <input type="range" id="peZoom" class="zoom-slider" min="2" max="40" value="16" oninput="peSetZoom(this.value)">
                         <input type="number" id="peW" class="num-input" value="32" min="1" max="192" title="Rộng">
                         <span>x</span>
                         <input type="number" id="peH" class="num-input" value="16" min="1" max="63" title="Cao">
                         <button class="control-btn studio" onclick="peTranslate()">Dịch ảnh theo kích cỡ</button>
                     </div>
-                    <canvas id="peCanvas" width="32" height="16" class="pix-canvas" style="width: 512px;"></canvas>
-                    <div class="img-note" id="peInfo">32x16 — vẽ vào bàn rồi bấm "Dịch ảnh theo kích cỡ"</div>
+                    <div class="canvas-scroll">
+                        <div class="canvas-wrap">
+                            <canvas id="peCanvas" width="32" height="16" class="pix-canvas"></canvas>
+                            <div class="grid-overlay" id="peGrid"></div>
+                        </div>
+                    </div>
+                    <div class="img-note" id="peInfo">32x16 — vẽ vào bàn rồi bấm "Dịch ảnh theo kích cỡ" (hoặc đưa ảnh vào để dịch theo kích cỡ)</div>
                     <textarea id="peHex" class="hex-area" readonly placeholder="Hex sẽ hiện ở đây sau khi dịch..."></textarea>
                 </div>
 
@@ -1919,11 +1944,18 @@
                         <button class="control-btn clear" onclick="beClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
                         <button class="control-btn" onclick="beUndo()"><i class="fa-solid fa-rotate-left"></i> Hoàn tác</button>
                         <button class="control-btn run" onclick="beCreate()">Tạo</button>
+                        <span>Zoom</span>
+                        <input type="range" id="beZoom" class="zoom-slider" min="2" max="40" value="16" oninput="beSetZoom(this.value)">
                         <input type="number" id="beW" class="num-input" value="32" min="1" max="192" title="Rộng">
                         <span>x</span>
                         <input type="number" id="beH" class="num-input" value="16" min="1" max="63" title="Cao">
                     </div>
-                    <canvas id="beCanvas" width="32" height="16" class="pix-canvas" style="width: 512px;"></canvas>
+                    <div class="canvas-scroll">
+                        <div class="canvas-wrap">
+                            <canvas id="beCanvas" width="32" height="16" class="pix-canvas"></canvas>
+                            <div class="grid-overlay" id="beGrid"></div>
+                        </div>
+                    </div>
                     <div class="img-note" id="beInfo">32x16 — vẽ là hex tự cập nhật</div>
                     <textarea id="beHex" class="hex-area" readonly placeholder="Hex tự cập nhật khi vẽ..."></textarea>
                 </div>
@@ -3358,6 +3390,7 @@
         // DỊCH ẢNH (CASIO): ẢNH -> HEX + PIXEL/BITMAP EDITOR
         // ==========================================================
         // Đóng gói 8 pixel ngang thành 1 byte (MSB trước), pixel đen = 1
+        // Hex biểu diễn dạng XX (vd: 80 01 00), không có tiền tố 0x
         function gridToHexLines(grid, w, h) {
             const bytesPerRow = Math.ceil(w / 8);
             const lines = [];
@@ -3370,10 +3403,10 @@
                         const x = bx * 8 + bit;
                         if (x < w && grid[y * w + x]) b |= (0x80 >> bit);
                     }
-                    row.push('0x' + b.toString(16).toUpperCase().padStart(2, '0'));
+                    row.push(b.toString(16).toUpperCase().padStart(2, '0'));
                 }
                 total += row.length;
-                lines.push(row.join(','));
+                lines.push(row.join(' '));
             }
             return { text: lines.join('\n'), bytes: total };
         }
@@ -3439,8 +3472,11 @@
                         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
                         imgGrid[p] = gray < 128 ? 1 : 0;
                     }
-                    renderPixCanvas(document.getElementById('imgMauCanvas'), imgGrid, IMG_W, IMG_H);
-                    document.getElementById('imgMauInfo').textContent = '192x63 — đã dịch xong, bấm vào ảnh để bật/tắt pixel';
+                    const cv = document.getElementById('imgMauCanvas');
+                    cv.style.width = '576px';
+                    cv.style.height = '189px';
+                    document.getElementById('imgMauGrid').style.backgroundSize = '3px 3px';
+                    renderPixCanvas(cv, imgGrid, IMG_W, IMG_H);
                     imgRunHex();
                 };
                 img.src = e.target.result;
@@ -3480,15 +3516,23 @@
         function createPixEditor(prefix, opts) {
             const st = {
                 w: opts.w, h: opts.h,
+                zoom: opts.zoom || 16,
                 grid: new Uint8Array(opts.w * opts.h),
                 undo: [],
                 mode: 'draw',
-                auto: opts.auto
+                auto: opts.auto,
+                image: null
             };
             const cv = document.getElementById(prefix + 'Canvas');
+            const gridEl = document.getElementById(prefix + 'Grid');
             const hexTa = document.getElementById(prefix + 'Hex');
             const info = document.getElementById(prefix + 'Info');
 
+            function syncSize() {
+                cv.style.width = (st.w * st.zoom) + 'px';
+                cv.style.height = (st.h * st.zoom) + 'px';
+                gridEl.style.backgroundSize = st.zoom + 'px ' + st.zoom + 'px';
+            }
             function render() { renderPixCanvas(cv, st.grid, st.w, st.h); }
             function hex() {
                 const r = gridToHexLines(st.grid, st.w, st.h);
@@ -3523,12 +3567,20 @@
             });
             document.addEventListener('pointerup', () => painting = false);
 
+            syncSize();
+            render();
+
             return {
                 setMode(m) {
                     st.mode = m;
                     document.getElementById(prefix + 'DrawBtn').classList.toggle('active', m === 'draw');
                     document.getElementById(prefix + 'EraseBtn').classList.toggle('active', m === 'erase');
                 },
+                setZoom(z) {
+                    st.zoom = Math.max(2, Math.min(40, z));
+                    syncSize();
+                },
+                setImage(img) { st.image = img; },
                 clear() {
                     st.grid.fill(0);
                     st.undo = [];
@@ -3551,32 +3603,73 @@
                     st.undo = [];
                     cv.width = w;
                     cv.height = h;
+                    syncSize();
                     render();
                     hexTa.value = '';
                     info.textContent = w + 'x' + h + ' — bàn vẽ mới';
                     showToast('Đã tạo bàn vẽ mới ' + w + 'x' + h + '!', 'success');
                 },
                 translate() {
-                    hex();
-                    render();
-                    showToast('Đã dịch ảnh theo kích cỡ ' + st.w + 'x' + st.h + '!', 'success');
+                    // Có ảnh đưa vào -> dịch ảnh về kích cỡ hiện tại (canvas API)
+                    if (st.image) {
+                        const off = document.createElement('canvas');
+                        off.width = st.w;
+                        off.height = st.h;
+                        const octx = off.getContext('2d');
+                        octx.fillStyle = '#fff';
+                        octx.fillRect(0, 0, st.w, st.h);
+                        octx.drawImage(st.image, 0, 0, st.w, st.h);
+                        const data = octx.getImageData(0, 0, st.w, st.h).data;
+                        st.grid = new Uint8Array(st.w * st.h);
+                        for (let i = 0, p = 0; p < st.grid.length; i += 4, p++) {
+                            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                            st.grid[p] = gray < 128 ? 1 : 0;
+                        }
+                        st.undo = [];
+                        render();
+                        hex();
+                        showToast('Đã dịch ảnh theo kích cỡ ' + st.w + 'x' + st.h + '!', 'success');
+                    } else {
+                        hex();
+                        render();
+                        showToast('Chưa có ảnh — đã dịch bàn vẽ hiện tại. Bấm "Đưa ảnh vào" để dịch ảnh!', 'warning');
+                    }
                 }
             };
         }
 
-        const peEditor = createPixEditor('pe', { w: 32, h: 16, auto: false });
-        const beEditor = createPixEditor('be', { w: 32, h: 16, auto: true });
+        const peEditor = createPixEditor('pe', { w: 32, h: 16, zoom: 16, auto: false });
+        const beEditor = createPixEditor('be', { w: 32, h: 16, zoom: 16, auto: true });
 
         function peSetMode(m) { peEditor.setMode(m); }
         function peClear() { peEditor.clear(); }
         function peUndo() { peEditor.undo(); }
         function peCreate() { peEditor.create(); }
+        function peSetZoom(z) { peEditor.setZoom(+z); }
         function peTranslate() { peEditor.translate(); }
 
         function beSetMode(m) { beEditor.setMode(m); }
         function beClear() { beEditor.clear(); }
         function beUndo() { beEditor.undo(); }
         function beCreate() { beEditor.create(); }
+        function beSetZoom(z) { beEditor.setZoom(+z); }
+
+        // Mục 2: đưa ảnh vào để dịch theo kích cỡ
+        function peLoadImage(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    peEditor.setImage(img);
+                    showToast('Đã tải ảnh ' + file.name + '! Bấm "Dịch ảnh theo kích cỡ" để dịch.', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            ev.target.value = '';
+        }
 
         // ==========================================================
         // KHỞI TẠO
