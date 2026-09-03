@@ -1233,7 +1233,7 @@
             line-height: 1;
         }
         .mini-min:hover { background: var(--btn-hover); color: var(--text-primary); }
-        .mini-win.collapsed { height: auto !important; resize: none; }
+        .mini-win.collapsed { height: auto !important; min-height: 0 !important; resize: none; }
         .mini-win.collapsed .mini-body,
         .mini-win.collapsed .mini-controls { display: none; }
         .mini-win.collapsed .mini-title { border-bottom: none; }
@@ -1735,6 +1735,9 @@
                 <button class="tool-btn" onclick="openImgView()" data-tip="Dịch ảnh">
                     <i class="fa-solid fa-image"></i><span class="tool-label">Dịch ảnh</span>
                 </button>
+                <button class="tool-btn" onclick="openToolsView()" data-tip="Tools">
+                    <i class="fa-solid fa-wrench"></i><span class="tool-label">Tools</span>
+                </button>
                 <button class="tool-btn ai" onclick="casioOpenAI()" data-tip="AI">
                     <i class="fa-solid fa-robot"></i><span class="tool-label">AI</span>
                 </button>
@@ -1914,10 +1917,6 @@
                         <button class="control-btn clear" onclick="peClear()"><i class="fa-solid fa-trash"></i> Xóa</button>
                         <button class="control-btn" onclick="peUndo()"><i class="fa-solid fa-rotate-left"></i> Hoàn tác</button>
                         <button class="control-btn run" onclick="peCreate()">Tạo</button>
-                        <label class="control-btn" style="cursor:pointer; display:inline-flex;">
-                            <i class="fa-solid fa-file-arrow-up"></i> Đưa ảnh vào
-                            <input type="file" id="peImgInput" accept="image/*" style="display:none" onchange="peLoadImage(event)">
-                        </label>
                         <span>Zoom</span>
                         <input type="range" id="peZoom" class="zoom-slider" min="2" max="40" value="16" oninput="peSetZoom(this.value)">
                         <input type="number" id="peW" class="num-input" value="32" min="1" max="192" title="Rộng">
@@ -1931,7 +1930,7 @@
                             <div class="grid-overlay" id="peGrid"></div>
                         </div>
                     </div>
-                    <div class="img-note" id="peInfo">32x16 — vẽ vào bàn rồi bấm "Dịch ảnh theo kích cỡ" (hoặc đưa ảnh vào để dịch theo kích cỡ)</div>
+                    <div class="img-note" id="peInfo">32x16 — bấm "Dịch ảnh theo kích cỡ" để chọn ảnh và dịch về kích cỡ đã chỉnh</div>
                     <textarea id="peHex" class="hex-area" readonly placeholder="Hex sẽ hiện ở đây sau khi dịch..."></textarea>
                 </div>
 
@@ -1960,6 +1959,80 @@
                     <textarea id="beHex" class="hex-area" readonly placeholder="Hex tự cập nhật khi vẽ..."></textarea>
                 </div>
 
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================================
+         TOOLS VIEW (Dịch token & Gán hex)
+         ========================================================== -->
+    <div id="toolsView" class="ai-view">
+        <aside class="sidebar">
+            <div class="sidebar-title">🔧</div>
+            <nav class="sidebar-nav">
+                <button class="tool-btn" onclick="closeToolsView()" data-tip="Thoát">
+                    <i class="fa-solid fa-door-open"></i>
+                </button>
+            </nav>
+            <div class="sidebar-footer">TOOLS</div>
+        </aside>
+        
+        <main class="main-content">
+            <!-- Tab Bar -->
+            <div class="tab-bar" id="toolsTabBar">
+                <div class="tab active" onclick="switchToolsTab(0)">🔤 Dịch token</div>
+                <div class="tab" onclick="switchToolsTab(1)">📦 Gán hex</div>
+            </div>
+            
+            <div style="flex:1; overflow-y:auto; padding: 1rem 1.2rem;">
+                <!-- PANEL 0: Dịch token -->
+                <div id="toolsPanel0">
+                    <div class="img-title">🔤 Dịch token (Hex → Token)</div>
+                    <div class="img-note">Nhập hex để dịch (hoa/thường/có cách/không cách đều được)</div>
+                    <textarea id="tokenHexInput" class="hex-area" placeholder="Ví dụ: 2D 41 42 43 hoặc 2d414243" style="min-height: 120px;"></textarea>
+                    
+                    <div class="img-controls" style="margin-top: 0.6rem;">
+                        <button class="control-btn run" onclick="runTokenTranslate()">
+                            <i class="fa-solid fa-language"></i> Dịch
+                        </button>
+                        <button class="control-btn clear" onclick="clearTokenPanel()">
+                            <i class="fa-solid fa-trash"></i> Xóa
+                        </button>
+                        <span style="margin-left: 0.5rem; color: var(--text-secondary);">Model:</span>
+                        <select id="tokenModelSelect" class="num-input" style="width: 120px; cursor: pointer;">
+                            <option value="fx580vnx">580vnx</option>
+                            <option value="fx880btg">880btg</option>
+                        </select>
+                    </div>
+                    
+                    <div class="img-note" style="margin-top: 0.8rem;">Kết quả token:</div>
+                    <div style="position: relative;">
+                        <button class="code-copy" onclick="copyTokenOutput()" title="Sao chép token">📋</button>
+                        <textarea id="tokenOutput" class="hex-area" readonly placeholder="Token sẽ hiện ở đây..." style="min-height: 150px;"></textarea>
+                    </div>
+                </div>
+                
+                <!-- PANEL 1: Gán hex -->
+                <div id="toolsPanel1" style="display:none">
+                    <div class="img-title">📦 Gán hex (Auto-Assign)</div>
+                    <div class="img-note">Nhập hex để gán tự động thành payload ABC (max 21 bytes)</div>
+                    <textarea id="assignHexInput" class="hex-area" placeholder="Ví dụ: 2D 41 42 43 D0 A5" style="min-height: 120px;"></textarea>
+                    
+                    <div class="img-controls" style="margin-top: 0.6rem;">
+                        <button class="control-btn run" onclick="runAutoAssign()">
+                            <i class="fa-solid fa-bolt"></i> Gán
+                        </button>
+                        <button class="control-btn clear" onclick="clearAssignPanel()">
+                            <i class="fa-solid fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                    
+                    <div class="img-note" style="margin-top: 0.8rem;">Kết quả gán:</div>
+                    <div style="position: relative;">
+                        <button class="code-copy" onclick="copyAssignOutput()" title="Sao chép kết quả">📋</button>
+                        <textarea id="assignOutput" class="hex-area" readonly placeholder="A = 1. XX XX XX&#10;B = 1. XX XX XX&#10;..." style="min-height: 180px;"></textarea>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -3520,8 +3593,7 @@
                 grid: new Uint8Array(opts.w * opts.h),
                 undo: [],
                 mode: 'draw',
-                auto: opts.auto,
-                image: null
+                auto: opts.auto
             };
             const cv = document.getElementById(prefix + 'Canvas');
             const gridEl = document.getElementById(prefix + 'Grid');
@@ -3580,7 +3652,6 @@
                     st.zoom = Math.max(2, Math.min(40, z));
                     syncSize();
                 },
-                setImage(img) { st.image = img; },
                 clear() {
                     st.grid.fill(0);
                     st.undo = [];
@@ -3609,36 +3680,65 @@
                     info.textContent = w + 'x' + h + ' — bàn vẽ mới';
                     showToast('Đã tạo bàn vẽ mới ' + w + 'x' + h + '!', 'success');
                 },
-                translate() {
-                    // Có ảnh đưa vào -> dịch ảnh về kích cỡ hiện tại (canvas API)
-                    if (st.image) {
-                        const off = document.createElement('canvas');
-                        off.width = st.w;
-                        off.height = st.h;
-                        const octx = off.getContext('2d');
-                        octx.fillStyle = '#fff';
-                        octx.fillRect(0, 0, st.w, st.h);
-                        octx.drawImage(st.image, 0, 0, st.w, st.h);
-                        const data = octx.getImageData(0, 0, st.w, st.h).data;
-                        st.grid = new Uint8Array(st.w * st.h);
-                        for (let i = 0, p = 0; p < st.grid.length; i += 4, p++) {
-                            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                            st.grid[p] = gray < 128 ? 1 : 0;
-                        }
-                        st.undo = [];
-                        render();
-                        hex();
-                        showToast('Đã dịch ảnh theo kích cỡ ' + st.w + 'x' + st.h + '!', 'success');
-                    } else {
-                        hex();
-                        render();
-                        showToast('Chưa có ảnh — đã dịch bàn vẽ hiện tại. Bấm "Đưa ảnh vào" để dịch ảnh!', 'warning');
+                // Dịch 1 ảnh về kích cỡ hiện tại của bàn vẽ (canvas API)
+                applyImage(img) {
+                    const off = document.createElement('canvas');
+                    off.width = st.w;
+                    off.height = st.h;
+                    const octx = off.getContext('2d');
+                    octx.fillStyle = '#fff';
+                    octx.fillRect(0, 0, st.w, st.h);
+                    octx.drawImage(img, 0, 0, st.w, st.h);
+                    const data = octx.getImageData(0, 0, st.w, st.h).data;
+                    st.grid = new Uint8Array(st.w * st.h);
+                    for (let i = 0, p = 0; p < st.grid.length; i += 4, p++) {
+                        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        st.grid[p] = gray < 128 ? 1 : 0;
                     }
+                    st.undo = [];
+                    render();
+                    hex();
+                },
+                // Đưa file ảnh vào -> dịch ảnh theo kích cỡ đã chỉnh
+                translate() {
+                    // Đọc + áp dụng kích cỡ người dùng đã chỉnh trước khi dịch
+                    const w = Math.max(1, Math.min(192, parseInt(document.getElementById(prefix + 'W').value) || 8));
+                    const h = Math.max(1, Math.min(63, parseInt(document.getElementById(prefix + 'H').value) || 8));
+                    document.getElementById(prefix + 'W').value = w;
+                    document.getElementById(prefix + 'H').value = h;
+                    st.w = w;
+                    st.h = h;
+                    st.grid = new Uint8Array(w * h);
+                    st.undo = [];
+                    cv.width = w;
+                    cv.height = h;
+                    syncSize();
+                    render();
+
+                    // Mở hộp chọn ảnh -> dịch ngay theo kích cỡ đã chỉnh
+                    const inp = document.createElement('input');
+                    inp.type = 'file';
+                    inp.accept = 'image/*';
+                    inp.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                this.applyImage(img);
+                                showToast('Đã dịch ảnh về ' + st.w + 'x' + st.h + '!', 'success');
+                            };
+                            img.src = ev.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                    inp.click();
                 }
             };
         }
 
-        const peEditor = createPixEditor('pe', { w: 32, h: 16, zoom: 16, auto: false });
+        const peEditor = createPixEditor('pe', { w: 32, h: 16, zoom: 16, auto: true });
         const beEditor = createPixEditor('be', { w: 32, h: 16, zoom: 16, auto: true });
 
         function peSetMode(m) { peEditor.setMode(m); }
@@ -3653,23 +3753,6 @@
         function beUndo() { beEditor.undo(); }
         function beCreate() { beEditor.create(); }
         function beSetZoom(z) { beEditor.setZoom(+z); }
-
-        // Mục 2: đưa ảnh vào để dịch theo kích cỡ
-        function peLoadImage(ev) {
-            const file = ev.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    peEditor.setImage(img);
-                    showToast('Đã tải ảnh ' + file.name + '! Bấm "Dịch ảnh theo kích cỡ" để dịch.', 'success');
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-            ev.target.value = '';
-        }
 
         // ==========================================================
         // KHỞI TẠO
@@ -5645,6 +5728,260 @@
         }
 
         // ==========================================================
+        // CASIO TOOLS: HEX ↔ TOKEN TRANSLATOR & AUTO-ASSIGN
+        // ==========================================================
+        
+        // NPRESS table for Casio payload splitting
+        const NPRESS = [
+          99, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+          24, 24, 24, 24, 24, 24, 24, 24, 30, 24, 24, 24, 24, 24, 24, 24,
+          24, 2, 2, 2, 24, 24, 24, 24, 24, 24, 24, 24, 2, 1, 1, 24,
+          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 24, 24, 24, 24, 24, 24,
+          2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 24, 24, 24, 24,
+          2, 1, 2, 2, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 49,
+          1, 49, 49, 49, 49, 49, 49, 49, 2, 2, 49, 49, 3, 3, 3, 3,
+          3, 3, 2, 2, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,
+          49, 49, 49, 2, 2, 49, 49, 2, 2, 2, 49, 49, 49, 49, 49, 49,
+          49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+          49, 49, 49, 49, 49, 2, 1, 1, 1, 1, 2, 49, 49, 2, 2, 49,
+          49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+          1, 49, 49, 49, 49, 49, 49, 49, 1, 1, 2, 49, 49, 49, 49, 49,
+          1, 49, 49, 49, 1, 1, 2, 2, 2, 3, 3, 3, 1, 3, 3, 3,
+          3, 3, 3, 3, 3, 3, 3, 3, 49, 49, 49, 49, 49, 49, 49, 49,
+          49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+        ];
+
+        function containsLetter(tok) {
+          return /[ABCDEF]/.test(tok);
+        }
+
+        function createMappingToken(table) {
+          const mapping = {};
+          for (let row = 0; row < table.length; row++) {
+            for (let col = 0; col < table[row].length; col++) {
+              const key = (row * 16 + col).toString(16).padStart(2, '0').toUpperCase();
+              mapping[key] = table[row][col];
+            }
+          }
+          return mapping;
+        }
+
+        const RAW_TOKEN_580 = [
+          ['<00>', '<01>', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@'],
+          ['@', '@', '@', '@', '@', '@', '@', '@', '@', '▯', '@', '@', '@', '@', '@', '@'],
+          ['𝒊', 'e', '𝜋', ':', '$', '?', '@', '@', '@', '@', '@', '@', ',', 'x10', '.', '@'],
+          ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '𝗔', '𝗕', '𝗖', '𝗗', '𝗘', '𝗙'],
+          ['M', 'Ans', 'A', 'B', 'C', 'D', 'E', 'F', '𝒙', '𝒚', 'PreAns', '𝒛', '𝜃', '@', '@', '@'],
+          ['∑(', '∫(', 'd/d𝒙(', '∏(', '@', '@', '@', '@', 'Min(', 'Max(', 'Mean(', 'Sum(', '@', '@', '@', '@'],
+          ['(', 'P(', 'Q(', 'R(', 'Not(', 'Neg(', 'Conjg(', 'Arg(', 'Abs(', 'Rnd(', 'Det(', 'Trn(', 'sinh(', 'cosh(', 'tanh(', 'sinh⁻¹('],
+          ['cosh⁻¹(', 'tanh⁻¹(', 'e^(', '10^(', '√(', 'ln(', '³√(', 'sin(', 'cos(', 'tan(', 'sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(', 'log(', 'Pol(', 'Rec('],
+          ['@', '@', '@', 'Int(', 'Intg(', 'Ref(', 'Rref(', 'RanInt#(', 'GCD(', 'LCM(', 'RndFix(', '@', '@', '@', '@', 'ReP('],
+          ['ImP(', 'Identity(', 'UnitV(', 'Angle(', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@'],
+          ['or', 'xor', 'xnor', 'and', '@', '=', '+', '−', '×', '÷', '÷R', '⋅', '∠', '𝗣', '𝗖', '@'],
+          ['@', '@', '@', '@', '@', '@', '@', '@', '', '', '₁', '₂', '@', '@', '@', '@'],
+          ['-<âm>', 'b', 'o', 'd', 'h', '@', '@', '@', '⌟', '^(', 'x√(', '@', '@', '@', '@', '@'],
+          [')', '▸t', '▸a+b𝒊', '▸r∠𝜃', '⁻¹', '²', '³', '%', '!', '°', 'ʳ', 'ᵍ', '▫', '𝐄', '𝐏', '𝐓'],
+          ['𝐆', '𝐌', '𝐤', '𝐦', '𝝁', '𝐧', '𝐩', '𝐟', '@', '▸Simp ', '@', '@', '@', '@', '@', '@'],
+          ['<F0>', '<F1>', '<F2>', '<F3>', '<F4>', '<F5>', '<F6>', '<F7>', '<F8>', '<F9>', '<FA>', '<FB>', '<FC>', '<FD>', '<FE>', '<FF>'],
+        ];
+
+        const RAW_TOKEN_880 = [
+          ['<00>', '<01>', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@'],
+          ['@', '@', '@', '@', '@', '@', '@', '@', '@', '▯', '@', '@', '@', '@', '@', '@'],
+          ['𝒊', 'e', '𝜋', ':', '$', '?', '@', '@', '@', '@', '@', '@', ',', 'x10', '.', '@'],
+          ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '𝗔', '𝗕', '𝗖', '𝗗', '𝗘', '𝗙'],
+          ['Ans', 'A', 'B', 'C', 'D', 'E', 'F', '𝒙', '𝒚', '𝒛', 'PreAns', '𝜃', '@', '@', '@', '@'],
+          ['∑(', '∫(', 'd/d𝒙(', '∏(', '@', '@', '@', '@', 'Min(', 'Max(', 'Mean(', 'Sum(', '@', '@', '@', '@'],
+          ['(', 'P(', 'Q(', 'R(', 'Not(', 'Neg(', 'Conjg(', 'Arg(', 'Abs(', 'Rnd(', 'Det(', 'Trn(', 'sinh(', 'cosh(', 'tanh(', 'sinh⁻¹('],
+          ['cosh⁻¹(', 'tanh⁻¹(', 'e^(', '10^(', '√(', 'ln(', '³√(', 'sin(', 'cos(', 'tan(', 'sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(', 'log(', 'Pol(', 'Rec('],
+          ['@', '@', '@', 'Int(', 'Intg(', 'Ref(', 'Rref(', 'RanInt#(', 'GCD(', 'LCM(', 'RndFix(', '@', '@', '@', '@', 'ReP('],
+          ['ImP(', 'Identity(', 'UnitV(', 'Angle(', '@', 'f(', 'g(', '@', '@', '@', '@', '@', '@', '@', '@', '@'],
+          ['or', 'xor', 'xnor', 'and', '@', '=', '+', '−', '×', '÷', '÷R', '⋅', '∠', '𝗣', '𝗖', '@'],
+          ['@', '@', '@', '@', '@', '@', '@', '@', '', '', '₁', '₂', '@', '@', '@', '@'],
+          ['-<âm>', 'b', 'o', 'd', 'h', '@', '@', '@', '⌟', '^(', 'x√(', '@', '@', '@', '@', '@'],
+          [')', '▸t', '▸a+b𝒊', '▸r∠𝜃', '⁻¹', '²', '³', '%', '!', '°', 'ʳ', 'ᵍ', '▫', '𝐄', '𝐏', '𝐓'],
+          ['𝐆', '𝐌', '𝐤', '𝐦', '𝝁', '𝐧', '𝐩', '𝐟', '@', '▸Simp ', '@', '@', '@', '', '', ''],
+          ['<F0>', '<F1>', '<F2>', '<F3>', '<F4>', '<F5>', '<F6>', '<F7>', '<F8>', '<F9>', '<FA>', '<FB>', '<FC>', '<FD>', '<FE>', '<FF>'],
+        ];
+
+        const TOKEN_FX580 = createMappingToken(RAW_TOKEN_580);
+        const TOKEN_FX880 = createMappingToken(RAW_TOKEN_880);
+
+        const TOKEN_FXXX = [
+          ["FD18", "Ran#"], ["FD30", "mₚ"], ["FD31", "mₙ"], ["FD32", "mₑ"], ["FD33", "m"],
+          ["FD34", "a₀"], ["FD35", "h"], ["FD36", "𝜇ɴ"], ["FD37", "𝜇ʙ"], ["FD38", "ℏ"],
+          ["FD39", "𝛼"], ["FD3A", "rₑ"], ["FD3B", "𝜆ᴄ"], ["FD3C", "𝛾ₚ"], ["FD3D", "𝜆ᴄₚ"],
+          ["FD3E", "𝜆ᴄₙ"], ["FD3F", "R"], ["FD40", "u"], ["FD41", "𝜇ₚ"], ["FD42", "𝜇ₑ"],
+          ["FD43", "𝜇ₙ"], ["FD44", "𝜇"], ["FD45", "𝐹"], ["FD46", "e"], ["FD47", "Nᴀ"],
+          ["FD48", "k"], ["FD49", "Vₘ"], ["FD4A", "R"], ["FD4B", "c₀"], ["FD4C", "c₁"],
+          ["FD4D", "c₂"], ["FD4E", "𝜎"], ["FD4F", "𝜀₀"], ["FD50", "𝜇₀"], ["FD51", "𝜙₀"],
+          ["FD52", "g"], ["FD53", "G₀"], ["FD54", "Z₀"], ["FD55", "t"], ["FD56", "G"],
+          ["FD57", "atm"], ["FD58", "lᴘ"], ["FD59", "tᴘ"], ["FD5A", "Kᴊ"], ["FD5B", "Rᴋ"],
+          ["FD5C", "m"], ["FD5D", "Rᴋ₋₉₀"], ["FD5E", "Kᴊ₋₉₀"],
+          ["FE01", "in▸cm"], ["FE02", "cm▸in"], ["FE03", "ft▸m"], ["FE04", "m▸ft"],
+          ["FE05", "yd▸m"], ["FE06", "m▸yd"], ["FE07", "mile▸km"], ["FE08", "km▸mile"],
+          ["FE09", "n mile▸m"], ["FE0A", "m▸n mile"], ["FE11", "pc▸km"], ["FE12", "km▸pc"],
+          ["FE0B", "acre▸m²"], ["FE0C", "m²▸acre"], ["FE0D", "gal(US)▸L"], ["FE0E", "L▸gal(US)"],
+          ["FE0F", "gal(UK)▸L"], ["FE10", "L▸gal(UK)"], ["FE15", "oz▸g"], ["FE16", "g▸oz"],
+          ["FE17", "lb▸kg"], ["FE18", "kg▸lb"], ["FE13", "m/s▸km/h"], ["FE14", "km/h▸m/s"],
+          ["FE19", "atm▸Pa"], ["FE1A", "Pa▸atm"], ["FE1B", "mmHg▸Pa"], ["FE1C", "Pa▸mmHg"],
+          ["FE1F", "kgf/cm²▸Pa"], ["FE20", "Pa▸kgf/cm²"], ["FE23", "lbf/in²▸kPa"], ["FE24", "kPa▸lbf/in²"],
+          ["FE21", "kgf⋅m▸J"], ["FE22", "J▸kgf⋅m"], ["FE27", "cal▸J"], ["FE28", "J▸cal"],
+          ["FE1D", "hp▸kW"], ["FE1E", "kW▸hp"], ["FE25", "°C▸°F"], ["FE26", "°F▸°C"]
+        ];
+
+        // Hex to Token translator
+        function translateHex(hexStr, model = 'fx580vnx') {
+          const input = hexStr.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+          const tokenMap = model === 'fx880btg' ? TOKEN_FX880 : TOKEN_FX580;
+
+          const tokens = [];
+
+          for (let i = 0; i < input.length;) {
+            const code = input.slice(i, i + 2);
+            const key = code.toUpperCase();
+
+            if (code[0] === 'F' && i + 4 <= input.length) {
+              const ext = input.slice(i, i + 4).toUpperCase();
+              const found = TOKEN_FXXX.find(item => item[0].toUpperCase() === ext);
+              tokens.push(found ? found[1] : `<${ext}>`);
+              i += 4;
+            } else {
+              if (tokenMap[key]) {
+                tokens.push(tokenMap[key] === '@' ? `<${key}>` : tokenMap[key]);
+              } else {
+                tokens.push(`<${key}>`);
+              }
+              i += 2;
+            }
+          }
+
+          return tokens.join(' ');
+        }
+
+        // Auto Assign Algorithm
+        function calculateAutoAssign(hexString) {
+          hexString = hexString.trim().replace(/\s+/g, '');
+          if (!hexString) return { output: '⚠️ Vui lòng nhập hex trước khi gán!', payload: [] };
+          if (hexString.length % 2 !== 0) {
+            return { output: '❌ Lỗi: Hex phải có số ký tự chẵn (đủ byte).\nBạn đã nhập ' + hexString.length + ' ký tự (thiếu 1 ký tự).', payload: [] };
+          }
+
+          const out = [];
+          for (let i = 0; i < hexString.length; i += 2) {
+            out.push(hexString.slice(i, i + 2).toUpperCase());
+          }
+
+          const invalids = out.filter(t => !/^[0-9A-Fa-f]{2}$/.test(t));
+          if (invalids.length > 0) {
+            return { output: '❌ Lỗi: Byte không hợp lệ: ' + invalids.join(', '), payload: [] };
+          }
+
+          const normalized = out.map(t => t.padStart(2, '0'));
+          const byte1 = [];
+          const checked = [];
+          let i = 0;
+
+          while (i < normalized.length) {
+            const byteVal = normalized[i];
+            const val = parseInt(byteVal, 16);
+
+            if (byteVal.startsWith('F')) {
+              if (i + 1 >= normalized.length) { i++; continue; }
+              const next = normalized[i + 1];
+              const ext = (byteVal + next).toUpperCase();
+              const found = TOKEN_FXXX.find(item => item[0].toUpperCase() === ext);
+
+              if (!found) {
+                checked.push(byteVal, next);
+                byte1.push(ext);
+              }
+              i += 2;
+              continue;
+            }
+
+            const press = NPRESS[val];
+            if (press === 99) {
+              return { output: '❌ Lỗi: Hex chứa byte 00 (không hợp lệ cho payload).', payload: byte1 };
+            } else if (press >= 24) {
+              checked.push(byteVal);
+              byte1.push(byteVal);
+            }
+            i++;
+          }
+
+          const units = [['00'], ['00']];
+          let k = 0;
+          while (k < checked.length) {
+            if (checked[k].startsWith('F') && k + 1 < checked.length) {
+              units.push([checked[k], checked[k + 1]]);
+              k += 2;
+            } else {
+              units.push([checked[k]]);
+              k++;
+            }
+          }
+          units.push(['23']);
+
+          const blocks = [];
+          let currentBlock = [];
+          let ui = 0;
+
+          while (ui < units.length) {
+            const u = units[ui];
+            let isValid = true;
+
+            if (currentBlock.length + u.length > 8) {
+              isValid = false;
+            } else {
+              for (let j = 0; j < u.length; j++) {
+                const pos = currentBlock.length + j;
+                if ((pos === 5 || pos === 7) && containsLetter(u[j])) {
+                  isValid = false;
+                  break;
+                }
+              }
+            }
+
+            if (isValid) {
+              currentBlock.push(...u);
+              ui++;
+            } else {
+              currentBlock.push('30');
+            }
+
+            if (currentBlock.length === 8) {
+              blocks.push(currentBlock);
+              currentBlock = [];
+            }
+          }
+
+          if (currentBlock.length > 0) {
+            blocks.push(currentBlock);
+          }
+
+          let A = blocks[0] || [];
+          let B = blocks[1] || [];
+          let C = blocks[2] || [];
+
+          if (blocks.length > 3 || A.length + B.length + C.length > 24) {
+            return { output: '❌ Lỗi: Payload vượt quá giới hạn (tối đa 24 bytes / 3 biến).', payload: byte1 };
+          }
+
+          if (A.length === 8 && (B.length || C.length)) A = [...A.slice(0, 7), 'x10^', A[7]];
+          if (B.length === 8 && C.length) B = [...B.slice(0, 7), 'x10^', B[7]];
+          if (C.length === 8) C = [...C.slice(0, 7), 'x10^', C[7]];
+
+          const names = ['A', 'B', 'C'];
+          const finalBlocks = [A, B, C];
+          const parts = finalBlocks
+            .map((arr, idx) => (arr.length ? `${names[idx]} = 1. ${arr.join(' ')}` : ''))
+            .filter(Boolean);
+
+          return { output: parts.join('\n:\n'), payload: byte1 };
+        }
+
+        // ==========================================================
         // CASIO SIDEBAR: TẢI / LƯU FILE (.ASM / .TXT)
         // ==========================================================
         function casioSaveFile() {
@@ -6106,6 +6443,118 @@
                 win.style.top = Math.max(0, e.clientY - oy) + 'px';
             });
             document.addEventListener('pointerup', () => dragging = false);
+        }
+
+        // ==========================================================
+        // TOOLS VIEW CONTROL (Dịch token & Gán hex)
+        // ==========================================================
+        function openToolsView() {
+            document.getElementById('casio-tools').classList.remove('active');
+            document.getElementById('toolsView').classList.add('active');
+            switchToolsTab(0);
+        }
+
+        function closeToolsView() {
+            document.getElementById('toolsView').classList.remove('active');
+            document.getElementById('casio-tools').classList.add('active');
+        }
+
+        function switchToolsTab(index) {
+            for (let i = 0; i < 2; i++) {
+                const panel = document.getElementById('toolsPanel' + i);
+                if (panel) panel.style.display = (i === index) ? 'block' : 'none';
+            }
+            document.querySelectorAll('#toolsTabBar .tab').forEach((t, i) => {
+                t.classList.toggle('active', i === index);
+            });
+        }
+
+        // ===== TOKEN TRANSLATOR =====
+        function runTokenTranslate() {
+            const input = document.getElementById('tokenHexInput').value.trim();
+            const model = document.getElementById('tokenModelSelect').value;
+            const output = document.getElementById('tokenOutput');
+            
+            if (!input) {
+                showToast('Nhập hex trước khi dịch!', 'warning');
+                output.value = '';
+                return;
+            }
+            
+            try {
+                const result = translateHex(input, model);
+                output.value = result;
+                showToast('Dịch thành công!', 'success');
+            } catch (err) {
+                output.value = '❌ Lỗi: ' + (err.message || err);
+                showToast('Lỗi khi dịch token!', 'warning');
+            }
+        }
+
+        // ===== AUTO ASSIGN =====
+        function runAutoAssign() {
+            const input = document.getElementById('assignHexInput').value.trim();
+            const output = document.getElementById('assignOutput');
+            
+            if (!input) {
+                showToast('Nhập hex trước khi gán!', 'warning');
+                output.value = '';
+                return;
+            }
+            
+            try {
+                const result = calculateAutoAssign(input);
+                
+                if (result.output.startsWith('❌') || result.output.startsWith('⚠️')) {
+                    output.value = result.output;
+                    showToast('Lỗi khi gán hex!', 'warning');
+                } else {
+                    output.value = result.output;
+                    if (result.payload && result.payload.length > 0) {
+                        output.value += '\n\n📊 Số bytes cần gán: ' + result.payload.join(' ');
+                    }
+                    showToast('Gán thành công!', 'success');
+                }
+            } catch (err) {
+                output.value = '❌ Lỗi: ' + (err.message || err);
+                showToast('Lỗi khi gán hex!', 'warning');
+            }
+        }
+
+        // ===== CLEAR PANELS =====
+        function clearTokenPanel() {
+            document.getElementById('tokenHexInput').value = '';
+            document.getElementById('tokenOutput').value = '';
+            showToast('Đã xóa nội dung!', 'info');
+        }
+
+        function clearAssignPanel() {
+            document.getElementById('assignHexInput').value = '';
+            document.getElementById('assignOutput').value = '';
+            showToast('Đã xóa nội dung!', 'info');
+        }
+
+        // ===== COPY OUTPUT =====
+        function copyTokenOutput() {
+            const output = document.getElementById('tokenOutput').value;
+            if (!output.trim()) {
+                showToast('Không có kết quả để sao chép!', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(output).then(() => {
+                showToast('Đã sao chép token!', 'success');
+            });
+        }
+
+        function copyAssignOutput() {
+            const output = document.getElementById('assignOutput').value;
+            if (!output.trim()) {
+                showToast('Không có kết quả để sao chép!', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(output).then(() => {
+                showToast('Đã sao chép kết quả!', 'success');
+            });
         }
 
     </script>
